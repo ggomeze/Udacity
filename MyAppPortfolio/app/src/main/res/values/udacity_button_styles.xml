@@ -1,0 +1,22 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="UdacityButton">
+        <item name="android:layout_marginRight">65dp</item>
+        <item name="android:layout_marginLeft">65dp</item>
+        <item name="android:textColor">#FF000000</item>
+        <item name="android:typeface">sans</item>
+        <item name="android:layout_centerHorizontal">true</item>
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">#FFF08C35</item>
+        <item name="android:onClick">showToast</item>
+        <item name="android:layout_marginTop">10dp</item>
+    </style>
+
+    <style name="UdacityButton.Red">
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:background">#ffc10938</item>
+    </style>
+
+</resources>
