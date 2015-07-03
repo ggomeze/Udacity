@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="country_pref_entries">
+        <item>@string/country_pref_entry_US</item>
+        <item>@string/country_pref_entry_ES</item>
+    </string-array>
+</resources>

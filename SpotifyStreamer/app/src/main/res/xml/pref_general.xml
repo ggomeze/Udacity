@@ -2,12 +2,11 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <EditTextPreference
-        android:title="@string/pref_country_label"
+    <ListPreference
         android:key="@string/pref_country_key"
-        android:defaultValue="@string/pref_country_default"
-        android:inputType="text"
-        android:singleLine="true" />
-
+        android:title="@string/pref_country_label"
+        android:dialogTitle="@string/pref_country_dialog_title"
+        android:entries="@array/country_pref_entries"
+        android:entryValues="@array/country_pref_values"
+        android:defaultValue="@string/pref_country_default"/>
 </PreferenceScreen>

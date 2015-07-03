@@ -44,7 +44,7 @@ public class SettingsActivity extends PreferenceActivity
         onPreferenceChange(preference,
                 PreferenceManager
                         .getDefaultSharedPreferences(preference.getContext())
-                        .getString(preference.getKey(), "US"));
+                        .getString(preference.getKey(), getString(R.string.pref_country_default)));
     }
 
     @Override

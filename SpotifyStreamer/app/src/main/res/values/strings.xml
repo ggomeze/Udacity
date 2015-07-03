@@ -6,15 +6,13 @@
     <string name="title_activity_detail">DetailActivity</string>
     <string name="title_activity_settings">Settings</string>
 
+    <!-- Shared Preferences -->
     <!-- Label for the location preference [CHAR LIMIT=30] -->
     <string name="pref_country_label">Country</string>
-
-    <!-- Key name for storing location in SharedPreferences [CHAR LIMIT=NONE] -->
     <string name="pref_country_key" translatable="false">country</string>
-
-    <!-- Default postal code for location preference [CHAR LIMIT=NONE] -->
     <string name="pref_country_default" translatable="false">ES</string>
-
-    <!-- country param for Spotify API [CHAR LIMIT=NONE] -->
     <string name="spotify_country_param" translatable="false">country</string>
+    <string name="pref_country_dialog_title">Choose a country</string>
+    <string name="country_pref_entry_US">United States</string>
+    <string name="country_pref_entry_ES">Spain</string>
 </resources>
