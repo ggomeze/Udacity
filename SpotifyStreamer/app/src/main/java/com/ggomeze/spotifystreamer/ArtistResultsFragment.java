@@ -35,6 +35,7 @@ import retrofit.client.Response;
 public class ArtistResultsFragment extends Fragment {
 
     private ArrayAdapter<String> mArtistListAdapter;
+    private ArrayList<Artist> mReturnedArtists;
 
     //Mandatory empty constructor for the activity to instantiate
     public ArtistResultsFragment() {
@@ -43,8 +44,7 @@ public class ArtistResultsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Add this line to indicate this fragment handles menu options
-        setHasOptionsMenu(true);
+        mReturnedArtists = new ArrayList<>();
     }
 
     @Override
@@ -71,36 +71,14 @@ public class ArtistResultsFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 // Executed in an Activity, so 'this' is the Context
                 // The fileUrl is a string URL, such as "http://www.example.com/image.png"
-                String artist = mArtistListAdapter.getItem(position);
-                Intent artistDetail = new Intent(getActivity(), DetailActivity.class).putExtra(Intent.EXTRA_TEXT, artist);
+                Artist artist = mReturnedArtists.get(position);
+                Intent artistDetail = new Intent(getActivity(), DetailActivity.class).putExtra(Intent.EXTRA_TEXT, artist.id);
                 startActivity(artistDetail);
             }
         });
         new SearchArtistsAsyncTask().execute("Coldplay");
 
         return fragment;
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.fragment_main, menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_refresh) {
-            new SearchArtistsAsyncTask().execute("Beyonce");
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private class SearchArtistsAsyncTask extends AsyncTask<String, Void, List<Artist>> {
@@ -126,7 +104,9 @@ public class ArtistResultsFragment extends Fragment {
         protected void onPostExecute(List<Artist> returnedArtists) {
             if (returnedArtists != null) {
                 mArtistListAdapter.clear();
+                mReturnedArtists.clear();
                 for (Artist artist : returnedArtists) {
+                    mReturnedArtists.add(artist);
                     mArtistListAdapter.add(artist.name);
                 }
             }

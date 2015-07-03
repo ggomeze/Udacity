@@ -1,7 +1,9 @@
 package com.ggomeze.spotifystreamer;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,15 +15,15 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Artist;
-import kaaes.spotify.webapi.android.models.ArtistsPager;
+import kaaes.spotify.webapi.android.models.Track;
+import kaaes.spotify.webapi.android.models.Tracks;
 
 
 /**
@@ -30,6 +32,7 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
 public class ArtistTopTracksFragment extends Fragment {
 
     private ArrayAdapter<String> mTrackListAdapter;
+    private String mArtistId;
 
     //Mandatory empty constructor for the activity to instantiate
     public ArtistTopTracksFragment() {
@@ -38,8 +41,6 @@ public class ArtistTopTracksFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Add this line to indicate this fragment handles menu options
-        setHasOptionsMenu(true);
     }
 
     @Override
@@ -47,11 +48,9 @@ public class ArtistTopTracksFragment extends Fragment {
                              Bundle savedInstanceState) {
         Intent intent = getActivity().getIntent();
         if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)){
-            String artist = intent.getStringExtra(Intent.EXTRA_TEXT);
-            Toast.makeText(getActivity(), artist, Toast.LENGTH_SHORT).show();
+            mArtistId = intent.getStringExtra(Intent.EXTRA_TEXT);
         }
 
-        //TODO Create a new list with this artist top10 tracks
         View fragment = inflater.inflate(R.layout.fragment_detail, container, false);
 
         ListView artistList = (ListView)fragment.findViewById(R.id.artist_top_tracks);
@@ -71,34 +70,25 @@ public class ArtistTopTracksFragment extends Fragment {
         artistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Executed in an Activity, so 'this' is the Context
-            //Play the track
+                //TODO Play the track
             }
         });
-        //TODO Search top tracks for identified artist
-        new SearchArtistTopTracksAsyncTask().execute("Beyonce");
 
         return fragment;
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.fragment_detail, menu);
+    public void onStart() {
+        super.onStart();
+        updateArtistTopTracks();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        return super.onOptionsItemSelected(item);
+    public void updateArtistTopTracks() {
+        //Search top tracks for identified artist
+        new SearchArtistTopTracksAsyncTask().execute(mArtistId);
     }
 
-    private class SearchArtistTopTracksAsyncTask extends AsyncTask<String, Void, List<Artist>> {
+    private class SearchArtistTopTracksAsyncTask extends AsyncTask<String, Void, Tracks> {
 
         private final String LOG_TAG = SearchArtistTopTracksAsyncTask.class.getSimpleName();
 
@@ -107,22 +97,24 @@ public class ArtistTopTracksFragment extends Fragment {
 
         }
         @Override
-        protected List<Artist> doInBackground(String... artists) {
-            if(artists.length == 0) {
+        protected Tracks doInBackground(String... artistsIDs) {
+            if(artistsIDs.length == 0) {
                 return null;
             }
-            String artistString = artists[0];
+            String artistId = artistsIDs[0];
             //Call Spotify and get and artist list
             SpotifyService spotify = new SpotifyApi().getService();
-            ArtistsPager results = spotify.searchArtists(artistString);
-            return results.artists.items;
+            Map artistTopTracksParams = new HashMap<String,String>();
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            artistTopTracksParams.put(getString(R.string.spotify_country_param), sharedPref.getString(getString(R.string.pref_country_key), "US"));
+            return spotify.getArtistTopTrack(artistId, artistTopTracksParams);
         }
         @Override
-        protected void onPostExecute(List<Artist> returnedArtists) {
-            if (returnedArtists != null) {
+        protected void onPostExecute(Tracks returnedTracks) {
+            if (returnedTracks != null) {
                 mTrackListAdapter.clear();
-                for (Artist artist : returnedArtists) {
-                    mTrackListAdapter.add(artist.name);
+                for (Track track : returnedTracks.tracks) {
+                    mTrackListAdapter.add(track.name);
                 }
             }
 
