@@ -1,21 +1,24 @@
-package com.ggomeze.spotifystreamer;
+package com.ggomeze.spotifystreamer.fragments;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.ggomeze.spotifystreamer.R;
+import com.ggomeze.spotifystreamer.adapters.TrackAdapter;
+import com.ggomeze.spotifystreamer.models.ParcelableTrack;
+
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,23 +32,29 @@ import kaaes.spotify.webapi.android.models.Tracks;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class ArtistTopTracksFragment extends Fragment {
+public class TopTracksFragment extends Fragment {
 
-    private ArrayAdapter<String> mTrackListAdapter;
+    static final String RESTURNED_TRACKS = "returnedTracks";
+
+    private ArrayList<ParcelableTrack> mReturnedTracks;
+    private TrackAdapter mTrackAdapter;
     private String mArtistId;
 
     //Mandatory empty constructor for the activity to instantiate
-    public ArtistTopTracksFragment() {
+    public TopTracksFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mReturnedTracks = new ArrayList<>();
+        mTrackAdapter = new TrackAdapter(getActivity(), 0, mReturnedTracks);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         Intent intent = getActivity().getIntent();
         if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)){
             mArtistId = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -54,18 +63,9 @@ public class ArtistTopTracksFragment extends Fragment {
         View fragment = inflater.inflate(R.layout.fragment_detail, container, false);
 
         ListView artistList = (ListView)fragment.findViewById(R.id.artist_top_tracks);
-        //Create adapter
-        mTrackListAdapter = new ArrayAdapter<String>(
-                //Current context (this fragment's parent activity
-                getActivity(),
-                //ID of list item layout
-                R.layout.artist_item,
-                //ID of TextView to populate
-                R.id.artist_list_textview,
-                new ArrayList<String>());
 
         //Find listView and assign artistList adapter
-        artistList.setAdapter(mTrackListAdapter);
+        artistList.setAdapter(mTrackAdapter);
 
         artistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -74,24 +74,39 @@ public class ArtistTopTracksFragment extends Fragment {
             }
         });
 
+        if (savedInstanceState != null && savedInstanceState.containsKey(RESTURNED_TRACKS)) {
+            mReturnedTracks.addAll(savedInstanceState.<ParcelableTrack>getParcelableArrayList(RESTURNED_TRACKS));
+        } else {
+            updateArtistTopTracks();
+        }
+
         return fragment;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(RESTURNED_TRACKS, mReturnedTracks);
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        updateArtistTopTracks();
     }
 
     public void updateArtistTopTracks() {
         //Search top tracks for identified artist
-        new SearchArtistTopTracksAsyncTask().execute(mArtistId);
+        new SearchArtistTopTracksAsyncTask(getActivity()).execute(mArtistId);
     }
 
     private class SearchArtistTopTracksAsyncTask extends AsyncTask<String, Void, Tracks> {
 
         private final String LOG_TAG = SearchArtistTopTracksAsyncTask.class.getSimpleName();
+        private WeakReference<Context> mContext;
 
+        public SearchArtistTopTracksAsyncTask (Context context){
+            mContext = new WeakReference<Context>(context);
+        }
         @Override
         protected void onPreExecute() {
 
@@ -111,10 +126,15 @@ public class ArtistTopTracksFragment extends Fragment {
         }
         @Override
         protected void onPostExecute(Tracks returnedTracks) {
-            if (returnedTracks != null) {
-                mTrackListAdapter.clear();
+            if (returnedTracks != null && returnedTracks.tracks.size() > 0) {
+                mTrackAdapter.clear();
                 for (Track track : returnedTracks.tracks) {
-                    mTrackListAdapter.add(track.name);
+                    mReturnedTracks.add(new ParcelableTrack(track));
+                }
+            } else {
+                Context context = mContext.get();
+                if (context != null) {
+                    Toast.makeText(context, getString(R.string.no_tracks_found), Toast.LENGTH_SHORT).show();
                 }
             }
 

@@ -1,12 +1,12 @@
-package com.ggomeze.spotifystreamer;
+package com.ggomeze.spotifystreamer.activities;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
-import android.view.KeyEvent;
+
+import com.ggomeze.spotifystreamer.R;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings.
@@ -48,7 +48,7 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     @Override
-    public boolean onPreferenceChange(Preference preference, Object value) {
+        public boolean onPreferenceChange(Preference preference, Object value) {
         String stringValue = value.toString();
 
         if (preference instanceof ListPreference) {

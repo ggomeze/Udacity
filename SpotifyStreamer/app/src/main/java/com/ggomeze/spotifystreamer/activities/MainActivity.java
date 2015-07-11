@@ -1,10 +1,12 @@
-package com.ggomeze.spotifystreamer;
+package com.ggomeze.spotifystreamer.activities;
 
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.ggomeze.spotifystreamer.R;
 
 
 public class MainActivity extends ActionBarActivity {

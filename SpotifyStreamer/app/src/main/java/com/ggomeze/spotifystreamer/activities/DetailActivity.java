@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.ggomeze.spotifystreamer;
+package com.ggomeze.spotifystreamer.activities;
 
-        import android.content.Intent;
-        import android.os.Bundle;
-        import android.support.v4.app.Fragment;
-        import android.support.v7.app.ActionBarActivity;
-        import android.view.LayoutInflater;
-        import android.view.Menu;
-        import android.view.MenuItem;
-        import android.view.View;
-        import android.view.ViewGroup;
-        import android.widget.Toast;
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
+import android.view.Menu;
+import android.view.MenuItem;
+
+import com.ggomeze.spotifystreamer.R;
 
 public class DetailActivity extends ActionBarActivity {
 
@@ -33,8 +31,15 @@ public class DetailActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-    }
 
+        ActionBar ab = getSupportActionBar();
+        ab.setTitle(getString(R.string.top_10_tracks));
+
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra(getString(R.string.album_intent_extra))){
+            ab.setSubtitle(intent.getStringExtra(getString(R.string.album_intent_extra)));
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
