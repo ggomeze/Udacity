@@ -22,4 +22,5 @@
     <!-- Toasts -->
     <string name="no_tracks_found">No tracks found!</string>
     <string name="no_artists_found">No artists found!</string>
+    <string name="connection_error">Connection error</string>
 </resources>

@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -117,27 +118,38 @@ public class TopTracksFragment extends Fragment {
                 return null;
             }
             String artistId = artistsIDs[0];
-            //Call Spotify and get and artist list
+
             SpotifyService spotify = new SpotifyApi().getService();
             Map artistTopTracksParams = new HashMap<String,String>();
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
             artistTopTracksParams.put(getString(R.string.spotify_country_param), sharedPref.getString(getString(R.string.pref_country_key), "US"));
-            return spotify.getArtistTopTrack(artistId, artistTopTracksParams);
+            try {
+                return spotify.getArtistTopTrack(artistId, artistTopTracksParams);
+            } catch (Exception exception) {
+                Log.e(LOG_TAG, getString(R.string.connection_error));
+                return null;
+            }
         }
         @Override
         protected void onPostExecute(Tracks returnedTracks) {
-            if (returnedTracks != null && returnedTracks.tracks.size() > 0) {
-                mTrackAdapter.clear();
-                for (Track track : returnedTracks.tracks) {
-                    mReturnedTracks.add(new ParcelableTrack(track));
+            if (returnedTracks != null) {
+                if (returnedTracks.tracks.size() > 0) {
+                    mTrackAdapter.clear();
+                    for (Track track : returnedTracks.tracks) {
+                        mReturnedTracks.add(new ParcelableTrack(track));
+                    }
+                } else {
+                    Context context = mContext.get();
+                    if (context != null) {
+                        Toast.makeText(context, getString(R.string.no_tracks_found), Toast.LENGTH_SHORT).show();
+                    }
                 }
             } else {
                 Context context = mContext.get();
                 if (context != null) {
-                    Toast.makeText(context, getString(R.string.no_tracks_found), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
                 }
             }
-
         }
     }
 }

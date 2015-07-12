@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -127,22 +128,33 @@ public class ArtistResultsFragment extends Fragment {
                 return null;
             }
             String artistString = artists[0];
-            //Call Spotify and get and artist list
             SpotifyService spotify = new SpotifyApi().getService();
-            ArtistsPager results = spotify.searchArtists(artistString);
-            return results.artists.items;
+            try {
+                ArtistsPager results = spotify.searchArtists(artistString);
+                return results.artists.items;
+            } catch (Exception exception) {
+                Log.e(LOG_TAG,getString(R.string.connection_error));
+                return null;
+            }
         }
         @Override
         protected void onPostExecute(List<Artist> returnedArtists) {
-            if (returnedArtists != null && returnedArtists.size() > 0) {
-                mArtistAdapter.clear();
-                for (Artist artist : returnedArtists) {
-                    mReturnedArtists.add(new ParcelableArtist(artist));
+            if (returnedArtists != null) {
+                if (returnedArtists.size() > 0) {
+                    mArtistAdapter.clear();
+                    for (Artist artist : returnedArtists) {
+                        mReturnedArtists.add(new ParcelableArtist(artist));
+                    }
+                } else {
+                    Context context = mContext.get();
+                    if (context != null) {
+                        Toast.makeText(context, getString(R.string.no_artists_found), Toast.LENGTH_SHORT).show();
+                    }
                 }
             } else {
                 Context context = mContext.get();
                 if (context != null) {
-                    Toast.makeText(context, getString(R.string.no_artists_found), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
                 }
             }
         }
