@@ -99,11 +99,6 @@ public class ArtistResultsFragment extends Fragment {
         outState.putParcelableArrayList("returnedArtists", mReturnedArtists);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-    }
-
     public void searchArtists() {
         String text = mSearchText.getText().toString();
         if (!(text.isEmpty()))

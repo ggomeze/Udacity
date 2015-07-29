@@ -25,10 +25,10 @@ public class ParcelableTrack extends Track implements Parcelable {
         mThumbnailUrl = in.readString();
     }
 
-    public ParcelableTrack(Track artist) {
+    public ParcelableTrack(Track track) {
         super();
-        name = artist.name;
-        album = artist.album;
+        name = track.name;
+        album = track.album;
     }
 
     public String getThumbnailUrl() {
