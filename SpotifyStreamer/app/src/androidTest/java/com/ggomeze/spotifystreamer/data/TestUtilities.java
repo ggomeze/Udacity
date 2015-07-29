@@ -1,8 +1,10 @@
 package com.ggomeze.spotifystreamer.data;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -54,39 +56,30 @@ public class TestUtilities extends AndroidTestCase {
         return trackValues;
     }
 
-    /*
-        Students: You can uncomment this helper function once you have finished creating the
-        LocationEntry part of the ArtistContract.
-     */
-//    static ContentValues createNorthPoleLocationValues() {
-//        // Create a new map of values, where column names are the keys
-//        ContentValues testValues = new ContentValues();
-//        testValues.put(ArtistContract.LocationEntry.COLUMN_LOCATION_SETTING, TEST_LOCATION);
-//        testValues.put(ArtistContract.LocationEntry.COLUMN_CITY_NAME, "North Pole");
-//        testValues.put(ArtistContract.LocationEntry.COLUMN_COORD_LAT, 64.7488);
-//        testValues.put(ArtistContract.LocationEntry.COLUMN_COORD_LONG, -147.353);
-//
-//        return testValues;
-//    }
 
-    /*
-        Students: You can uncomment this function once you have finished creating the
-        LocationEntry part of the ArtistContract as well as the SpotifyStreamerDbHelper.
-     */
-//    static long insertNorthPoleLocationValues(Context context) {
-//        // insert our test records into the database
-//        SpotifyStreamerDbHelper dbHelper = new SpotifyStreamerDbHelper(context);
-//        SQLiteDatabase db = dbHelper.getWritableDatabase();
-//        ContentValues testValues = TestUtilities.createNorthPoleLocationValues();
-//
-//        long locationRowId;
-//        locationRowId = db.insert(ArtistContract.LocationEntry.TABLE_NAME, null, testValues);
-//
-//        // Verify we got a row back.
-//        assertTrue("Error: Failure to insert North Pole Location Values", locationRowId != -1);
-//
-//        return locationRowId;
-//    }
+    static ContentValues createArtistValues() {
+        // Create a new map of values, where column names are the keys
+        ContentValues testValues = new ContentValues();
+        testValues.put(ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB, "http://artist.image.thumb");
+        testValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_ID, "12345");
+
+        return testValues;
+    }
+
+    static long insertArtistValues(Context context) {
+        // insert our test records into the database
+        SpotifyStreamerDbHelper dbHelper = new SpotifyStreamerDbHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues testValues = TestUtilities.createArtistValues();
+
+        long locationRowId;
+        locationRowId = db.insert(ArtistContract.ArtistEntry.TABLE_NAME, null, testValues);
+
+        // Verify we got a row back.
+        assertTrue("Error: Failure to insert test artist", locationRowId != -1);
+
+        return locationRowId;
+    }
 
     /*
         Students: The functions we provide inside of TestProvider use this utility class to test

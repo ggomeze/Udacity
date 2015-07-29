@@ -38,8 +38,7 @@ public class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        //TODO It looks like relationshipt between tracks and artists, is has many to has many. We'd need so, a new
-        //table that link tracks and artists. For the time being, i'm going to consider a track has one artist
+        //TODO It looks like relationship between tracks and artists, is has many to has many. We'd need so, a new table that link tracks and artists. For the time being, i'm going to consider a track has one artist
         final String SQL_CREATE_ARTIST_TABLE = "CREATE TABLE " + ArtistEntry.TABLE_NAME + " (" +
                 ArtistEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 ArtistEntry.COLUMN_ARTIST_ID + " TEXT NOT NULL, " +
@@ -67,6 +66,7 @@ public class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
                 // it's created a UNIQUE constraint with REPLACE strategy
                 " UNIQUE (" + TrackEntry.COLUMN_TRACK_ID + ") ON CONFLICT REPLACE);";
 
+        sqLiteDatabase.execSQL(SQL_CREATE_TRACK_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_ARTIST_TABLE);
     }
 
