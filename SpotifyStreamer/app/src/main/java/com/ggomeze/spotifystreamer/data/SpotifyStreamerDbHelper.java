@@ -19,18 +19,17 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.ggomeze.spotifystreamer.data.TrackContract.TrackEntry;
 import com.ggomeze.spotifystreamer.data.ArtistContract.ArtistEntry;
+import com.ggomeze.spotifystreamer.data.TrackContract.TrackEntry;
 
 /**
  * Manages a local database for weather data.
  */
 public class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
 
+    static final String DATABASE_NAME = "spotifystreamer.db";
     // If you change the database schema, you must increment the database version.
     private static final int DATABASE_VERSION = 1;
-
-    static final String DATABASE_NAME = "spotifystreamer.db";
 
     public SpotifyStreamerDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -41,18 +40,19 @@ public class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
         //TODO It looks like relationship between tracks and artists, is has many to has many. We'd need so, a new table that link tracks and artists. For the time being, i'm going to consider a track has one artist
         final String SQL_CREATE_ARTIST_TABLE = "CREATE TABLE " + ArtistEntry.TABLE_NAME + " (" +
                 ArtistEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-                ArtistEntry.COLUMN_ARTIST_ID + " TEXT UNIQUE NOT NULL, " +
+                ArtistEntry.COLUMN_ARTIST_ID + " INTEGER UNIQUE NOT NULL, " +
+                ArtistEntry.COLUMN_ARTIST_NAME + " TEXT UNIQUE NOT NULL, " +
                 ArtistEntry.COLUMN_IMAGE_THUMB + " TEXT NOT NULL);";
 
         final String SQL_CREATE_TRACK_TABLE = "CREATE TABLE " + TrackEntry.TABLE_NAME + " (" +
                 TrackEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 TrackEntry.COLUMN_ARTIST_FOREIGN_KEY + " INTEGER, " +
-                TrackEntry.COLUMN_ALBUM_NAME + "TEXT NOT NULL, " +
-                TrackEntry.COLUMN_IMAGE_MED + "TEXT NOT NULL, " +
-                TrackEntry.COLUMN_IMAGE_THUMB + "TEXT NOT NULL, " +
-                TrackEntry.COLUMN_TRACK_ID + "TEXT UNIQUE NOT NULL, " +
-                TrackEntry.COLUMN_TRACK_NAME + "TEXT NOT NULL, " +
-                TrackEntry.COLUMN_TRACK_URL + "TEXT NOT NULL, " +
+                TrackEntry.COLUMN_TRACK_ID + " INTEGER UNIQUE NOT NULL, " +
+                TrackEntry.COLUMN_ALBUM_NAME + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_IMAGE_MED + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_IMAGE_THUMB + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_TRACK_NAME + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_TRACK_URL + " TEXT NOT NULL, " +
 
                 // Set up the artist_id column as a foreign key to artists table.
                 "FOREIGN KEY (" + TrackEntry.COLUMN_ARTIST_FOREIGN_KEY + ") REFERENCES " +

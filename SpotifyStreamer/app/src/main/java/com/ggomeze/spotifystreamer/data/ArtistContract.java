@@ -16,7 +16,6 @@
 package com.ggomeze.spotifystreamer.data;
 
 import android.provider.BaseColumns;
-import android.text.format.Time;
 
 /**
  * Defines table and column names for the weather database.
@@ -30,6 +29,8 @@ public class ArtistContract {
 
         // Artist ID in Spotify
         public static final String COLUMN_ARTIST_ID = "spotify_artist_id";
+        // Artist Name in Spotify
+        public static final String COLUMN_ARTIST_NAME = "artist_name";
         // Artist image Thumbnail url
         public static final String COLUMN_IMAGE_THUMB = "image_thumb";
 

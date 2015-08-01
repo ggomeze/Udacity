@@ -22,6 +22,9 @@ import java.util.Set;
  */
 public class TestUtilities extends AndroidTestCase {
 
+    private static final long ARTIST_ID_IN_SPOTIFY_TEST = 12345;
+    private static final long TRACK_ID_IN_SPOTIFY_TEST = 67890;
+
     static void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
         assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
         validateCurrentRecord(error, valueCursor, expectedValues);
@@ -41,13 +44,10 @@ public class TestUtilities extends AndroidTestCase {
         }
     }
 
-    /*
-        Students: Use this to create some default weather values for your database tests.
-     */
     static ContentValues createTrackValues(long artistID) {
         ContentValues trackValues = new ContentValues();
-        trackValues.put(TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, 12345);
-        trackValues.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, 67890);
+        trackValues.put(TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, artistID);
+        trackValues.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, TRACK_ID_IN_SPOTIFY_TEST);
         trackValues.put(TrackContract.TrackEntry.COLUMN_ALBUM_NAME, "Album name");
         trackValues.put(TrackContract.TrackEntry.COLUMN_IMAGE_MED, "http://image.url.med");
         trackValues.put(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB, "http://image.url.thumb");
@@ -58,27 +58,49 @@ public class TestUtilities extends AndroidTestCase {
 
 
     static ContentValues createArtistValues() {
-        // Create a new map of values, where column names are the keys
         ContentValues testValues = new ContentValues();
         testValues.put(ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB, "http://artist.image.thumb");
-        testValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_ID, "12345");
+        testValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, "Artist Name");
+        testValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_ID, ARTIST_ID_IN_SPOTIFY_TEST);
 
         return testValues;
     }
 
-    static long insertArtistValues(Context context) {
+    static long insertArtistValues(Context context, ContentValues artistValues) {
+        SpotifyStreamerDbHelper dbHelper = new SpotifyStreamerDbHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        assertEquals(true, db.isOpen());
+
+        long artistRowId = db.insert(ArtistContract.ArtistEntry.TABLE_NAME, null, artistValues);
+
+        // Verify we got a row back.
+        assertTrue("Error: Failure to insert test artist", artistRowId != -1);
+
+        db.close();
+
+        return artistRowId;
+    }
+
+    static long insertTrackValues(Context context, ContentValues trackValues) {
         // insert our test records into the database
         SpotifyStreamerDbHelper dbHelper = new SpotifyStreamerDbHelper(context);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues testValues = TestUtilities.createArtistValues();
 
-        long locationRowId;
-        locationRowId = db.insert(ArtistContract.ArtistEntry.TABLE_NAME, null, testValues);
+        assertEquals(true, db.isOpen());
+
+        long trackRowId = db.insert(TrackContract.TrackEntry.TABLE_NAME, null, trackValues);
 
         // Verify we got a row back.
-        assertTrue("Error: Failure to insert test artist", locationRowId != -1);
+        assertTrue("Error: Failure to insert test track", trackRowId != -1);
 
-        return locationRowId;
+        db.close();
+
+        return trackRowId;
+    }
+
+    static TestContentObserver getTestContentObserver() {
+        return TestContentObserver.getTestContentObserver();
     }
 
     /*
@@ -93,15 +115,15 @@ public class TestUtilities extends AndroidTestCase {
         final HandlerThread mHT;
         boolean mContentChanged;
 
+        private TestContentObserver(HandlerThread ht) {
+            super(new Handler(ht.getLooper()));
+            mHT = ht;
+        }
+
         static TestContentObserver getTestContentObserver() {
             HandlerThread ht = new HandlerThread("ContentObserverThread");
             ht.start();
             return new TestContentObserver(ht);
-        }
-
-        private TestContentObserver(HandlerThread ht) {
-            super(new Handler(ht.getLooper()));
-            mHT = ht;
         }
 
         // On earlier versions of Android, this onChange method is called
@@ -128,9 +150,5 @@ public class TestUtilities extends AndroidTestCase {
             }.run();
             mHT.quit();
         }
-    }
-
-    static TestContentObserver getTestContentObserver() {
-        return TestContentObserver.getTestContentObserver();
     }
 }
