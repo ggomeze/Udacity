@@ -1,7 +1,10 @@
 package com.ggomeze.spotifystreamer.models;
 
+import android.content.ContentValues;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.ggomeze.spotifystreamer.data.TrackContract;
 
 import java.util.List;
 
@@ -23,12 +26,16 @@ public class ParcelableTrack extends Track implements Parcelable {
         album = new Album();
         album.name = in.readString();
         mThumbnailUrl = in.readString();
+        preview_url = in.readString();
+        id = in.readString();
     }
 
     public ParcelableTrack(Track track) {
         super();
         name = track.name;
         album = track.album;
+        preview_url = track.preview_url;
+        id = track.id;
     }
 
     public String getThumbnailUrl() {
@@ -37,7 +44,8 @@ public class ParcelableTrack extends Track implements Parcelable {
             Integer lowerResolution = 0;
             for (Image image : images) {
                 Integer height = image.height;
-                if (lowerResolution == 0 || height > lowerResolution) {
+                if (lowerResolution == 0 || height < lowerResolution) {
+                    lowerResolution = height;
                     mThumbnailUrl = image.url;
                 }
             }
@@ -55,6 +63,8 @@ public class ParcelableTrack extends Track implements Parcelable {
         parcel.writeString(name);
         parcel.writeString(album.name);
         parcel.writeString(getThumbnailUrl());
+        parcel.writeString(preview_url);
+        parcel.writeString(id);
     }
 
     public final Parcelable.Creator<ParcelableTrack> CREATOR = new Parcelable.Creator<ParcelableTrack>() {
@@ -68,4 +78,16 @@ public class ParcelableTrack extends Track implements Parcelable {
             return new ParcelableTrack[i];
         }
     };
+
+    public ContentValues getTrackContentValues() {
+        ContentValues trackValues = new ContentValues();
+        trackValues.put(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB, getThumbnailUrl());
+        trackValues.put(TrackContract.TrackEntry.COLUMN_TRACK_URL, preview_url);
+        trackValues.put(TrackContract.TrackEntry.COLUMN_TRACK_NAME, name);
+        trackValues.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, id);
+        trackValues.put(TrackContract.TrackEntry.COLUMN_ALBUM_NAME, album.name);
+        //TODO Analyse returned images to see which is more appropriated
+        trackValues.put(TrackContract.TrackEntry.COLUMN_IMAGE_MED, getThumbnailUrl());
+        return trackValues;
+    }
 }

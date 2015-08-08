@@ -1,7 +1,10 @@
 package com.ggomeze.spotifystreamer.models;
 
+import android.content.ContentValues;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.ggomeze.spotifystreamer.data.ArtistContract;
 
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Image;
@@ -12,8 +15,7 @@ import kaaes.spotify.webapi.android.models.Image;
  */
 public class ParcelableArtist extends Artist implements Parcelable {
 
-    private String mThumbnailUrl = "";
-    private Artist mArtist;
+    public String mThumbnailUrl = "";
 
     private ParcelableArtist(Parcel in) {
         super();
@@ -33,7 +35,8 @@ public class ParcelableArtist extends Artist implements Parcelable {
             Integer lowerResolution = 0;
             for (Image image : images) {
                 Integer height = image.height;
-                if (lowerResolution == 0 || height > lowerResolution) {
+                if (lowerResolution == 0 || height < lowerResolution) {
+                    lowerResolution = height;
                     mThumbnailUrl = image.url;
                 }
             }
@@ -63,4 +66,13 @@ public class ParcelableArtist extends Artist implements Parcelable {
             return new ParcelableArtist[i];
         }
     };
+
+    public ContentValues getArtistContentValues() {
+        ContentValues artistValues = new ContentValues();
+        artistValues.put(ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB, getThumbnailUrl());
+        artistValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, name);
+        artistValues.put(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID, id);
+
+        return artistValues;
+    }
 }

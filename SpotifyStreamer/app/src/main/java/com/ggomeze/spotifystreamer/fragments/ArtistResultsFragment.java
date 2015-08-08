@@ -1,7 +1,11 @@
 package com.ggomeze.spotifystreamer.fragments;
 
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -20,7 +24,9 @@ import android.widget.Toast;
 import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.activities.DetailActivity;
 import com.ggomeze.spotifystreamer.adapters.ArtistAdapter;
+import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.models.ParcelableArtist;
+import com.ggomeze.spotifystreamer.tasks.FetchArtistsTask;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -102,58 +108,9 @@ public class ArtistResultsFragment extends Fragment {
     public void searchArtists() {
         String text = mSearchText.getText().toString();
         if (!(text.isEmpty()))
-            new SearchArtistsAsyncTask(getActivity()).execute(text);
+            new FetchArtistsTask(getActivity(), mArtistAdapter, mReturnedArtists).execute(text);
     }
 
-    private class SearchArtistsAsyncTask extends AsyncTask<String, Void, List<Artist>> {
-
-        private final String LOG_TAG = SearchArtistsAsyncTask.class.getSimpleName();
-        private WeakReference<Context> mContext;
-
-        public SearchArtistsAsyncTask (Context context){
-            mContext = new WeakReference<Context>(context);
-        }
-        @Override
-        protected void onPreExecute() {
-
-        }
-        @Override
-        protected List<Artist> doInBackground(String... artists) {
-            if(artists.length == 0) {
-                return null;
-            }
-            String artistString = artists[0];
-            SpotifyService spotify = new SpotifyApi().getService();
-            try {
-                ArtistsPager results = spotify.searchArtists(artistString);
-                return results.artists.items;
-            } catch (Exception exception) {
-                Log.e(LOG_TAG,getString(R.string.connection_error));
-                return null;
-            }
-        }
-        @Override
-        protected void onPostExecute(List<Artist> returnedArtists) {
-            if (returnedArtists != null) {
-                if (returnedArtists.size() > 0) {
-                    mArtistAdapter.clear();
-                    for (Artist artist : returnedArtists) {
-                        mReturnedArtists.add(new ParcelableArtist(artist));
-                    }
-                } else {
-                    Context context = mContext.get();
-                    if (context != null) {
-                        Toast.makeText(context, getString(R.string.no_artists_found), Toast.LENGTH_SHORT).show();
-                    }
-                }
-            } else {
-                Context context = mContext.get();
-                if (context != null) {
-                    Toast.makeText(context, getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-    }
 }
 
 

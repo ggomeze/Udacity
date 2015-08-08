@@ -35,6 +35,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".activities.MainActivity" />
         </activity>
+        <provider
+            android:authorities="com.ggomeze.spotifystreamer"
+            android:name=".data.TracksAndArtistProvider">
+        </provider>
     </application>
 
 </manifest>

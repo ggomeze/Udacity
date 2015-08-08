@@ -15,15 +15,38 @@
  */
 package com.ggomeze.spotifystreamer.data;
 
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.net.Uri;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 /**
  * Defines table and column names for the weather database.
  */
 public class TrackContract {
 
+    // The "Content authority" is a name for the entire content provider, similar to the
+    // relationship between a domain name and its website.  A convenient string to use for the
+    // content authority is the package name for the app, which is guaranteed to be unique on the
+    // device.
+    public static final String CONTENT_AUTHORITY = "com.ggomeze.spotifystreamer";
+
+    // Use CONTENT_AUTHORITY to create the base of all URI's which apps will use to contact
+    // the content provider.
+    public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
+
+    // Possible paths (appended to base content URI for possible URI's)
+    // For instance, content://com.ggomeze.spotifystreamer/tracks/ is a valid path for
+    // tracks. content://com.ggomeze.spotifystreamer/givemeroot/ will fail,
+    // as the ContentProvider hasn't been given any information on what to do with "givemeroot".
+    // At least, let's hope not.  Don't be that dev, reader.  Don't be that dev.
+    public static final String PATH_TRACKS = "tracks";
+
     /* Inner class that defines the table contents of the artists table */
     public static final class TrackEntry implements BaseColumns {
+
+        public static final String LOG_TAG = TrackEntry.class.getSimpleName();
 
         public static final String TABLE_NAME = "Tracks";
 
@@ -42,5 +65,40 @@ public class TrackContract {
         // Track medium image url
         public static final String COLUMN_IMAGE_MED = "image_med";
 
+        //Content Provider
+        public static final Uri CONTENT_URI =
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_TRACKS).build();
+
+        public static final String CONTENT_TYPE =
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_TRACKS;
+        public static final String CONTENT_ITEM_TYPE =
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_TRACKS;
+
+
+        public static Uri buildTrackUri(long id) {
+            return ContentUris.withAppendedId(CONTENT_URI, id);
+        }
+
+        public static Uri buildTracksFromTrackName(String trackName) {
+            return CONTENT_URI.buildUpon().appendPath(trackName).build();
+        }
+
+        public static Uri buildArtistFromTrackId(long trackId) {
+            return CONTENT_URI.buildUpon().appendPath(Long.toString(trackId))
+                    .appendPath(ArtistContract.PATH_ARTISTS).build();
+        }
+
+        // Get fields from Uri
+        public static long getTrackIdFromUri(Uri uri) {
+            long trackId = -1L;
+
+            try {
+                trackId = Long.parseLong(uri.getPathSegments().get(1));
+            } catch (NumberFormatException e) {
+                Log.e(LOG_TAG, "Error parsing track ID");
+            }
+
+            return trackId;
+        }
     }
 }

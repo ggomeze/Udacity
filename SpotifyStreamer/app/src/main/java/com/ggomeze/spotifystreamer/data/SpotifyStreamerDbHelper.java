@@ -40,14 +40,14 @@ public class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
         //TODO It looks like relationship between tracks and artists, is has many to has many. We'd need so, a new table that link tracks and artists. For the time being, i'm going to consider a track has one artist
         final String SQL_CREATE_ARTIST_TABLE = "CREATE TABLE " + ArtistEntry.TABLE_NAME + " (" +
                 ArtistEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
-                ArtistEntry.COLUMN_ARTIST_ID + " INTEGER UNIQUE NOT NULL, " +
-                ArtistEntry.COLUMN_ARTIST_NAME + " TEXT UNIQUE NOT NULL, " +
+                ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID + " TEXT UNIQUE NOT NULL, " +
+                ArtistEntry.COLUMN_ARTIST_NAME + " TEXT NOT NULL, " +
                 ArtistEntry.COLUMN_IMAGE_THUMB + " TEXT NOT NULL);";
 
         final String SQL_CREATE_TRACK_TABLE = "CREATE TABLE " + TrackEntry.TABLE_NAME + " (" +
                 TrackEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 TrackEntry.COLUMN_ARTIST_FOREIGN_KEY + " INTEGER, " +
-                TrackEntry.COLUMN_TRACK_ID + " INTEGER UNIQUE NOT NULL, " +
+                TrackEntry.COLUMN_TRACK_ID + " TEXT UNIQUE NOT NULL, " +
                 TrackEntry.COLUMN_ALBUM_NAME + " TEXT NOT NULL, " +
                 TrackEntry.COLUMN_IMAGE_MED + " TEXT NOT NULL, " +
                 TrackEntry.COLUMN_IMAGE_THUMB + " TEXT NOT NULL, " +

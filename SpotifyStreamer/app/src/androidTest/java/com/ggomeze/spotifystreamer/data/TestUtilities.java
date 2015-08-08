@@ -22,13 +22,19 @@ import java.util.Set;
  */
 public class TestUtilities extends AndroidTestCase {
 
-    private static final long ARTIST_ID_IN_SPOTIFY_TEST = 12345;
-    private static final long TRACK_ID_IN_SPOTIFY_TEST = 67890;
+    public static final String ARTIST_ID_IN_SPOTIFY_TEST = "askdasdjk23ko2l3k3";
+    public static final String TRACK_ID_IN_SPOTIFY_TEST = "asdkjsn932jkekejn34k233";
+    public static final long TRACK_ID_TEST = 12345;
+    public static final long ARTIST_ID_TEST = 67890;
 
     static void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
-        assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
+        validateCursorNotEmpty(error, valueCursor);
         validateCurrentRecord(error, valueCursor, expectedValues);
         valueCursor.close();
+    }
+
+    static void validateCursorNotEmpty(String error, Cursor valueCursor) {
+        assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
     }
 
     static void validateCurrentRecord(String error, Cursor valueCursor, ContentValues expectedValues) {
@@ -61,7 +67,7 @@ public class TestUtilities extends AndroidTestCase {
         ContentValues testValues = new ContentValues();
         testValues.put(ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB, "http://artist.image.thumb");
         testValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, "Artist Name");
-        testValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_ID, ARTIST_ID_IN_SPOTIFY_TEST);
+        testValues.put(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID, ARTIST_ID_IN_SPOTIFY_TEST);
 
         return testValues;
     }

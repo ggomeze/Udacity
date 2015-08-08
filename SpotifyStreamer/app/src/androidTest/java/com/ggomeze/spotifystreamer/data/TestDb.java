@@ -90,7 +90,7 @@ public class TestDb extends AndroidTestCase {
         // Build a HashSet of all of the column names we want to look for Artists table
         final HashSet<String> artistColumnHashSet = new HashSet<>();
         artistColumnHashSet.add(ArtistContract.ArtistEntry._ID);
-        artistColumnHashSet.add(ArtistContract.ArtistEntry.COLUMN_ARTIST_ID);
+        artistColumnHashSet.add(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID);
         artistColumnHashSet.add(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME);
         artistColumnHashSet.add(ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB);
 

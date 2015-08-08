@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.adapters.TrackAdapter;
 import com.ggomeze.spotifystreamer.models.ParcelableTrack;
+import com.ggomeze.spotifystreamer.tasks.FetchArtistTopTracksTask;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -97,60 +98,7 @@ public class TopTracksFragment extends Fragment {
 
     public void updateArtistTopTracks() {
         //Search top tracks for identified artist
-        new SearchArtistTopTracksAsyncTask(getActivity()).execute(mArtistId);
-    }
-
-    private class SearchArtistTopTracksAsyncTask extends AsyncTask<String, Void, Tracks> {
-
-        private final String LOG_TAG = SearchArtistTopTracksAsyncTask.class.getSimpleName();
-        private WeakReference<Context> mContext;
-
-        public SearchArtistTopTracksAsyncTask (Context context){
-            mContext = new WeakReference<Context>(context);
-        }
-        @Override
-        protected void onPreExecute() {
-
-        }
-        @Override
-        protected Tracks doInBackground(String... artistsIDs) {
-            if(artistsIDs.length == 0) {
-                return null;
-            }
-            String artistId = artistsIDs[0];
-
-            SpotifyService spotify = new SpotifyApi().getService();
-            Map artistTopTracksParams = new HashMap<String,String>();
-            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            artistTopTracksParams.put(getString(R.string.spotify_country_param), sharedPref.getString(getString(R.string.pref_country_key), "US"));
-            try {
-                return spotify.getArtistTopTrack(artistId, artistTopTracksParams);
-            } catch (Exception exception) {
-                Log.e(LOG_TAG, getString(R.string.connection_error));
-                return null;
-            }
-        }
-        @Override
-        protected void onPostExecute(Tracks returnedTracks) {
-            if (returnedTracks != null) {
-                if (returnedTracks.tracks.size() > 0) {
-                    mTrackAdapter.clear();
-                    for (Track track : returnedTracks.tracks) {
-                        mReturnedTracks.add(new ParcelableTrack(track));
-                    }
-                } else {
-                    Context context = mContext.get();
-                    if (context != null) {
-                        Toast.makeText(context, getString(R.string.no_tracks_found), Toast.LENGTH_SHORT).show();
-                    }
-                }
-            } else {
-                Context context = mContext.get();
-                if (context != null) {
-                    Toast.makeText(context, getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
+        new FetchArtistTopTracksTask(getActivity(), mTrackAdapter, mReturnedTracks).execute(mArtistId);
     }
 }
 
