@@ -66,7 +66,7 @@ public class ArtistContract {
         public static final String CONTENT_ITEM_TYPE =
                 ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_ARTISTS;
 
-        public static Uri buildArtistUri(long id) {
+        public static Uri buildArtistIdUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
 
@@ -74,12 +74,25 @@ public class ArtistContract {
             return CONTENT_URI.buildUpon().appendQueryParameter(COLUMN_ARTIST_NAME, artistName).build();
         }
 
-        // Get artistId from Uris (/tracks/#/artists/#, /artists/#)
+        public static final String[] ARTIST_COLUMNS = {
+                ArtistEntry.TABLE_NAME + "." + ArtistContract.ArtistEntry._ID,
+                ArtistEntry.COLUMN_ARTIST_NAME,
+                ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID,
+                ArtistEntry.TABLE_NAME + "." + ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB
+        };
+
+        // These indices are tied to ARTIST_COLUMNS.  If ARTIST_COLUMNS changes, these must change.
+        public static final int COL_ARTIST_ID_INDEX = 0;
+        public static final int COL_ARTIST_NAME_INDEX = 1;
+        public static final int COL_SPOTIFY_ARTIST_ID_INDEX = 2;
+        public static final int COL_ARTIST_IMAGE_THUMB_INDEX = 3;
+
+        // Get artistId from Uris (/artists/#, /artists/#/tracks)
         public static long getArtistIdFromUri(Uri uri) {
             long artistId = -1L;
 
             try {
-                artistId = ContentUris.parseId(uri);
+                artistId = Long.parseLong(uri.getPathSegments().get(1));
             } catch (NumberFormatException e) {
                 Log.e(LOG_TAG, "Error parsing artist ID");
             }

@@ -30,6 +30,8 @@ import android.util.Log;
 import com.ggomeze.spotifystreamer.data.TrackContract.TrackEntry;
 import com.ggomeze.spotifystreamer.data.ArtistContract.ArtistEntry;
 
+import java.util.Arrays;
+
 /*
     Note: This is not a complete set of tests of the Sunshine ContentProvider, but it does test
     that at least the basic functionality has been implemented correctly.
@@ -163,7 +165,7 @@ public class TestProvider extends AndroidTestCase {
 
         // content://com.ggomeze.spotifystreamer/tracks/12345
         type = mContext.getContentResolver().getType(
-                TrackEntry.buildTrackUri(mTestTrackId));
+                TrackEntry.buildTrackIdUri(mTestTrackId));
         // vnd.android.cursor.item/com.ggomeze.spotifystreamer/tracks/12345
         assertEquals("Error: the TrackEntry CONTENT_URI with track_id should return TrackEntry.CONTENT_TYPE",
                 TrackEntry.CONTENT_ITEM_TYPE, type);
@@ -185,8 +187,7 @@ public class TestProvider extends AndroidTestCase {
 
     /*
         This test uses the database directly to insert and then uses the ContentProvider to
-        read out the data.  Uncomment this test to see if the basic weather query functionality
-        given in the ContentProvider is working correctly.
+        read out the data.
      */
     public void testBasicTrackQuery() {
         // insert our test records into the database
@@ -215,6 +216,94 @@ public class TestProvider extends AndroidTestCase {
 
         // Make sure we get the correct cursor out of the database
         TestUtilities.validateCursor("testBasicTrackQuery", trackCursor, trackValues);
+    }
+
+    /*
+        This test insert some tracks from an artist and test the query to get those records afterwards
+     */
+    public void testGetTracksFromArtistQuery() {
+        // First artist values
+        ContentValues testValues = TestUtilities.createArtistValues();
+        //Modify spotify_atist_id
+        testValues.put(ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID, TestUtilities.ARTIST_ID_IN_SPOTIFY_TEST + "99");
+        Uri firstArtistUri = mContext.getContentResolver().insert(ArtistEntry.CONTENT_URI, testValues);
+        long firstArtistRowId = ContentUris.parseId(firstArtistUri);
+
+        // Verify we got a row back.
+        assertTrue(firstArtistRowId != -1);
+
+        // Second artist values
+        testValues = TestUtilities.createArtistValues();
+        Uri secondArtistUri = mContext.getContentResolver().insert(ArtistEntry.CONTENT_URI, testValues);
+        long secondArtistRowId = ContentUris.parseId(secondArtistUri);
+
+        // Verify we got a row back.
+        assertTrue(secondArtistRowId != -1);
+
+        // Data's inserted.  IN THEORY.  Now pull some out to stare at it and verify it made
+        // the round trip.
+
+        // A cursor is your primary interface to the query results.
+        Cursor cursor = mContext.getContentResolver().query(
+                ArtistEntry.CONTENT_URI,
+                null, // leaving "columns" null just returns all the columns.
+                ArtistEntry._ID + "= ?", // cols for "where" clause
+                new String[]{Long.toString(secondArtistRowId)}, // values for "where" clause
+                null  // sort order
+        );
+
+        TestUtilities.validateCursor("testGetTracksFromArtistQuery. Error validating ArtistEntry.",
+                cursor, testValues);
+
+        // Now we can bulkInsert some tracks.  In fact, we only implement BulkInsert for track
+        // entries.  With ContentProviders, you really only have to implement the features you
+        // use, after all.
+        ContentValues[] firstBulkInsertContentValues = createBulkInsertTestTracksValues(firstArtistRowId, 20);
+        ContentValues[] secondBulkInsertContentValues = createBulkInsertTestTracksValues(secondArtistRowId, 60);
+
+        // Register a content observer for our bulk insert.
+        TestUtilities.TestContentObserver trackObserver = TestUtilities.getTestContentObserver();
+        mContext.getContentResolver().registerContentObserver(TrackEntry.CONTENT_URI, true, trackObserver);
+
+        mContext.getContentResolver().bulkInsert(TrackEntry.CONTENT_URI, firstBulkInsertContentValues);
+        int insertCount = mContext.getContentResolver().bulkInsert(TrackEntry.CONTENT_URI, secondBulkInsertContentValues);
+
+        // Students:  If this fails, it means that you most-likely are not calling the
+        // getContext().getContentResolver().notifyChange(uri, null); in your BulkInsert
+        // ContentProvider method.
+        trackObserver.waitForNotificationOrFail();
+        mContext.getContentResolver().unregisterContentObserver(trackObserver);
+
+        assertEquals(insertCount, BULK_INSERT_RECORDS_TO_INSERT);
+
+        cursor = mContext.getContentResolver().query(
+                TrackContract.TrackEntry.buildTracksFromAnArtist(secondArtistRowId),
+                null,   // projection
+                null,
+                null,   // Values for the "where" clause
+                null    // sort order
+        );
+
+        assertEquals(cursor.getCount(), BULK_INSERT_RECORDS_TO_INSERT);
+
+        cursor = mContext.getContentResolver().query(
+                TrackEntry.CONTENT_URI,
+                Arrays.copyOfRange(TrackEntry.TRACK_COLUMNS, 1, TrackEntry.TRACK_COLUMNS.length), // leaving "columns" null just returns all the columns.
+                TrackEntry.COLUMN_ARTIST_FOREIGN_KEY + " = ?", // cols for "where" clause
+                new String[]{Long.toString(secondArtistRowId)}, // values for "where" clause
+                TrackEntry.COLUMN_TRACK_ID + " ASC"  // sort order == by TRACK_ID ASC (we are comparing a string though)
+        );
+
+        // we should have as many records in the database as we've inserted
+        assertEquals(cursor.getCount(), BULK_INSERT_RECORDS_TO_INSERT);
+
+        // and let's make sure they match the ones we created
+        cursor.moveToFirst();
+        for ( int i = 0; i < BULK_INSERT_RECORDS_TO_INSERT; i++, cursor.moveToNext() ) {
+            TestUtilities.validateCurrentRecord("testGetTracksFromArtistQuery.  Error validating TrackEntry " + i,
+                    cursor, secondBulkInsertContentValues[i]);
+        }
+        cursor.close();
     }
 
     /*
@@ -296,8 +385,8 @@ public class TestProvider extends AndroidTestCase {
         Cursor cursor = mContext.getContentResolver().query(
                 ArtistEntry.CONTENT_URI,
                 null,   // projection
-                ArtistEntry._ID + " = " + artistRowId,
-                null,   // Values for the "where" clause
+                ArtistEntry._ID + " = ?",
+                new String[]{Long.toString(artistRowId)},   // Values for the "where" clause
                 null    // sort order
         );
 
@@ -427,16 +516,16 @@ public class TestProvider extends AndroidTestCase {
 
     static private final int BULK_INSERT_RECORDS_TO_INSERT = 10;
 
-    static ContentValues[] createBulkInsertTracksValues(long spotifyArtistId) {
+    static ContentValues[] createBulkInsertTestTracksValues(long artistId, int trackOffset) {
         ContentValues[] returnContentValues = new ContentValues[BULK_INSERT_RECORDS_TO_INSERT];
 
         for ( int i = 0; i < BULK_INSERT_RECORDS_TO_INSERT; i++ ) {
             ContentValues trackValues = new ContentValues();
-            trackValues.put(TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, spotifyArtistId);
+            trackValues.put(TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, artistId);
             trackValues.put(TrackEntry.COLUMN_ALBUM_NAME, "Album name");
             trackValues.put(TrackEntry.COLUMN_IMAGE_MED, "http://track.image.med");
             trackValues.put(TrackEntry.COLUMN_IMAGE_THUMB, "http://track.image.med");
-            trackValues.put(TrackEntry.COLUMN_TRACK_ID, (1000 + i));
+            trackValues.put(TrackEntry.COLUMN_TRACK_ID, (trackOffset + i));
             trackValues.put(TrackEntry.COLUMN_TRACK_NAME, "Track name");
             trackValues.put(TrackEntry.COLUMN_TRACK_URL, "http://track.stream.url");
             returnContentValues[i] = trackValues;
@@ -445,7 +534,7 @@ public class TestProvider extends AndroidTestCase {
     }
 
     public void testBulkInsert() {
-        // first, let's create a location value
+        // first, let's create an artist value
         ContentValues testValues = TestUtilities.createArtistValues();
         Uri artistUri = mContext.getContentResolver().insert(ArtistEntry.CONTENT_URI, testValues);
         long artistRowId = ContentUris.parseId(artistUri);
@@ -471,7 +560,7 @@ public class TestProvider extends AndroidTestCase {
         // Now we can bulkInsert some tracks.  In fact, we only implement BulkInsert for track
         // entries.  With ContentProviders, you really only have to implement the features you
         // use, after all.
-        ContentValues[] bulkInsertContentValues = createBulkInsertTracksValues(artistRowId);
+        ContentValues[] bulkInsertContentValues = createBulkInsertTestTracksValues(artistRowId, 80);
 
         // Register a content observer for our bulk insert.
         TestUtilities.TestContentObserver trackObserver = TestUtilities.getTestContentObserver();
@@ -486,6 +575,16 @@ public class TestProvider extends AndroidTestCase {
         mContext.getContentResolver().unregisterContentObserver(trackObserver);
 
         assertEquals(insertCount, BULK_INSERT_RECORDS_TO_INSERT);
+
+        cursor = mContext.getContentResolver().query(
+                TrackContract.TrackEntry.buildTracksFromAnArtist(artistRowId),
+                null,   // projection
+                null,
+                null,   // Values for the "where" clause
+                null    // sort order
+        );
+
+        assertEquals(cursor.getCount(), BULK_INSERT_RECORDS_TO_INSERT);
 
         // A cursor is your primary interface to the query results.
         cursor = mContext.getContentResolver().query(

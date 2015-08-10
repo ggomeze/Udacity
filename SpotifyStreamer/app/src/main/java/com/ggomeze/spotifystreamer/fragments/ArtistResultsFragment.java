@@ -1,14 +1,12 @@
 package com.ggomeze.spotifystreamer.fragments;
 
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -19,34 +17,31 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.activities.DetailActivity;
-import com.ggomeze.spotifystreamer.adapters.ArtistAdapter;
+import com.ggomeze.spotifystreamer.adapters.ArtistCursorAdapter;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
+import com.ggomeze.spotifystreamer.data.TrackContract;
 import com.ggomeze.spotifystreamer.models.ParcelableArtist;
 import com.ggomeze.spotifystreamer.tasks.FetchArtistsTask;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.List;
-
-import kaaes.spotify.webapi.android.SpotifyApi;
-import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Artist;
-import kaaes.spotify.webapi.android.models.ArtistsPager;
 
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class ArtistResultsFragment extends Fragment {
+public class ArtistResultsFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    public static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
 
     static final String RESTURNED_ARTISTS = "returnedArtists";
+    static final int FETCH_ARTISTS_LOADER = 0;
 
     private ArrayList<ParcelableArtist> mReturnedArtists;
-    private ArtistAdapter mArtistAdapter;
+    private ArtistCursorAdapter mArtistCursorAdapter;
+    private ListView mArtistList;
     private EditText mSearchText;
 
     //Mandatory empty constructor for the activity to instantiate
@@ -57,7 +52,6 @@ public class ArtistResultsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mReturnedArtists = new ArrayList<ParcelableArtist>();
-        mArtistAdapter = new ArtistAdapter(getActivity(), 0, mReturnedArtists);
     }
 
     @Override
@@ -65,7 +59,7 @@ public class ArtistResultsFragment extends Fragment {
                              Bundle savedInstanceState) {
         View fragment = inflater.inflate(R.layout.fragment_main, container, false);
 
-        ListView artistList = (ListView)fragment.findViewById(R.id.list_view_artists);
+        mArtistList = (ListView)fragment.findViewById(R.id.list_view_artists);
         mSearchText = (EditText) fragment.findViewById(R.id.search);
         mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -77,18 +71,24 @@ public class ArtistResultsFragment extends Fragment {
             }
         });
 
+        mArtistCursorAdapter = new ArtistCursorAdapter(getActivity(), null, 0);
 
-        artistList.setAdapter(mArtistAdapter);
+        mArtistList.setAdapter(mArtistCursorAdapter);
 
-        artistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mArtistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Executed in an Activity, so 'this' is the Context
-                // The fileUrl is a string URL, such as "http://www.example.com/image.png"
-                ParcelableArtist artist = mReturnedArtists.get(position);
-                Intent artistDetail = new Intent(getActivity(), DetailActivity.class).putExtra(Intent.EXTRA_TEXT, artist.id);
-                artistDetail.putExtra(getString(R.string.album_intent_extra), artist.name);
-                startActivity(artistDetail);
+                // CursorAdapter returns a cursor at the correct position for getItem(), or null
+                // if it cannot seek to that position.
+                Cursor cursor = (Cursor) mArtistCursorAdapter.getItem(position);
+                if (cursor != null) {
+                    Intent artistDetail = new Intent(getActivity(), DetailActivity.class)
+                            .setData(TrackContract.TrackEntry.buildTracksFromAnArtist(cursor.getLong(ArtistContract.ArtistEntry.COL_ARTIST_ID_INDEX))
+                            );//artists/#/tracks
+                    //TODO Remove this info and get it from database
+                    artistDetail.putExtra(getString(R.string.album_intent_extra), cursor.getString(ArtistContract.ArtistEntry.COL_ARTIST_NAME_INDEX));
+                    startActivity(artistDetail);
+                }
             }
         });
 
@@ -107,10 +107,37 @@ public class ArtistResultsFragment extends Fragment {
 
     public void searchArtists() {
         String text = mSearchText.getText().toString();
-        if (!(text.isEmpty()))
-            new FetchArtistsTask(getActivity(), mArtistAdapter, mReturnedArtists).execute(text);
+
+        if (!(text.isEmpty())) {
+            getLoaderManager().restartLoader(FETCH_ARTISTS_LOADER, null, this);
+            new FetchArtistsTask(getActivity()).execute(text);
+        }
     }
 
+    //Callbacks to implement for loaders
+    @Override
+    public Loader onCreateLoader(int id, Bundle args) {
+        Log.v(LOG_TAG, "In onCreateLoader");
+        //If there is no loader with that ID, create one
+        // Create and return a CursorLoader that will take care of
+        // creating a Cursor for the data being displayed.
+        String text = mSearchText.getText().toString();
+        return new CursorLoader(getActivity(),
+                ArtistContract.ArtistEntry.CONTENT_URI,
+                ArtistContract.ArtistEntry.ARTIST_COLUMNS,   //projection
+                ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME + " LIKE ?", //where clause
+                new String[]{"%" + text + "%"}, //values for where clause
+                null    // sort order
+        );
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        mArtistCursorAdapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader loader) {
+        mArtistCursorAdapter.swapCursor(null);
+    }
 }
-
-

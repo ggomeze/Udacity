@@ -24,6 +24,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
+import com.ggomeze.spotifystreamer.utils.Utility;
+
 public class TracksAndArtistProvider extends ContentProvider {
 
     // The URI Matcher used by this content provider.
@@ -76,6 +78,11 @@ public class TracksAndArtistProvider extends ContentProvider {
             TrackContract.TrackEntry.TABLE_NAME +
                     "." + TrackContract.TrackEntry._ID + " = ? ";
 
+    //tracks.artist_id = ?
+    private static final String trackArtistIdSelection =
+            TrackContract.TrackEntry.TABLE_NAME +
+                    "." + TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY + " = ? ";
+
 
     //artists.artist_id = ?
     private static final String artistIdSelection =
@@ -93,18 +100,30 @@ public class TracksAndArtistProvider extends ContentProvider {
                     "." + ArtistContract.ArtistEntry._ID + " = ? AND " +
                     TrackContract.TrackEntry._ID + " >= ? ";
 
-    private Cursor getTracksBy(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        return tracksQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                sortOrder
-        );
+    private Cursor getTracksBy(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        if(selection != null && selection.contains(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID)) {
+            return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
+                    TrackContract.TrackEntry.TRACK_COLUMNS,
+                    selection,
+                    selectionArgs,
+                    null,
+                    null,
+                    sortOrder
+            );
+        } else {
+            return tracksQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null,
+                    null,
+                    sortOrder
+            );
+        }
+
     }
 
-    private Cursor getArtistsBy(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    private Cursor getArtistsBy(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         return artistsQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
                 projection,
                 selection,
@@ -133,13 +152,10 @@ public class TracksAndArtistProvider extends ContentProvider {
     private Cursor getTracksByArtistId(Uri uri, String[] projection, String sortOrder) {
         long artistId = ArtistContract.ArtistEntry.getArtistIdFromUri(uri);
 
-        String[] selectionArgs;
-        String selection;
+        String selection = trackArtistIdSelection;
+        String[] selectionArgs = new String[]{Long.toString(artistId)};
 
-        selection = artistIdSelection;
-        selectionArgs = new String[]{Long.toString(artistId)};
-
-        return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
+        return tracksQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
                 projection,
                 selection,
                 selectionArgs,
@@ -157,31 +173,6 @@ public class TracksAndArtistProvider extends ContentProvider {
 
         selection = trackIdSelection;
         selectionArgs = new String[]{Long.toString(trackId)};
-
-        return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                sortOrder
-        );
-    }
-
-    private Cursor getTrackFromArtist(Uri uri, String[] projection, String sortOrder) {
-        long artistId = ArtistContract.ArtistEntry.getArtistIdFromUri(uri);
-        long trackId = TrackContract.TrackEntry.getTrackIdFromUri(uri);
-
-        String[] selectionArgs;
-        String selection;
-
-        if (trackId == -1L) {//Get all tracks from artist
-            selection = artistIdSelection;
-            selectionArgs = new String[]{Long.toString(artistId)};
-        } else { //Get only track with track id
-            selectionArgs = new String[]{Long.toString(artistId), Long.toString(trackId)};
-            selection = artistIdAndTrackIdSelection;
-        }
 
         return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
                 projection,
@@ -257,11 +248,15 @@ public class TracksAndArtistProvider extends ContentProvider {
         switch (sUriMatcher.match(uri)) {
             // "/tracks"
             case TRACKS:
-                retCursor = getTracksBy(uri, projection, selection, selectionArgs, sortOrder);
+                retCursor = getTracksBy(projection, selection, selectionArgs, sortOrder);
                 break;
             // "/artists"
             case ARTISTS:
-                retCursor = getArtistsBy(uri, projection, selection, selectionArgs, sortOrder);
+                retCursor = getArtistsBy(projection, selection, selectionArgs, sortOrder);
+                break;
+            // "/artist/#/tracks"
+            case ARTIST_TRACKS:
+                retCursor = getTracksByArtistId(uri, projection, sortOrder);
                 break;
             case TRACK_ARTISTS:
                 retCursor = getArtistFromTrack(uri, projection, sortOrder);
@@ -286,7 +281,7 @@ public class TracksAndArtistProvider extends ContentProvider {
             case TRACKS: {
                 long _id = db.insert(TrackContract.TrackEntry.TABLE_NAME, null, values);
                 if ( _id > 0 )
-                    returnUri = TrackContract.TrackEntry.buildTrackUri(_id);
+                    returnUri = TrackContract.TrackEntry.buildTrackIdUri(_id);
                 else
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 break;
@@ -294,7 +289,7 @@ public class TracksAndArtistProvider extends ContentProvider {
             case ARTISTS:
                 long _id = db.insert(ArtistContract.ArtistEntry.TABLE_NAME, null, values);
                 if ( _id > 0 )
-                    returnUri = ArtistContract.ArtistEntry.buildArtistUri(_id);
+                    returnUri = ArtistContract.ArtistEntry.buildArtistIdUri(_id);
                 else
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 break;
@@ -380,15 +375,35 @@ public class TracksAndArtistProvider extends ContentProvider {
     public int bulkInsert(Uri uri, ContentValues[] values) {
         final SQLiteDatabase db = mSpotifyStreamerDbHelper.getWritableDatabase();
         final int match = sUriMatcher.match(uri);
+        int returnCount = 0;
         switch (match) {
+            case ARTIST_TRACKS:
             case TRACKS:
                 db.beginTransaction();
-                int returnCount = 0;
                 try {
                     for (ContentValues value : values) {
-                        long _id = db.insert(TrackContract.TrackEntry.TABLE_NAME, null, value);
-                        if (_id != -1) {
-                            returnCount++;
+                        if (Utility.trackExist(getContext(), value.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_ID)) < 0) {//Doesn't exist yet
+                            long _id = db.insert(TrackContract.TrackEntry.TABLE_NAME, null, value);
+                            if (_id != -1) {
+                                returnCount++;
+                            }
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+                getContext().getContentResolver().notifyChange(uri, null);
+                return returnCount;
+            case ARTISTS:
+                db.beginTransaction();
+                try {
+                    for (ContentValues value : values) {
+                        if (Utility.artistExist(getContext(), value.getAsString(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID)) < 0) {//Doesn't exist yet
+                            long _id = db.insert(ArtistContract.ArtistEntry.TABLE_NAME, null, value);
+                            if (_id != -1) {
+                                returnCount++;
+                            }
                         }
                     }
                     db.setTransactionSuccessful();

@@ -18,7 +18,7 @@ import kaaes.spotify.webapi.android.models.Track;
  */
 public class ParcelableTrack extends Track implements Parcelable {
 
-    private String mThumbnailUrl = "";
+    public String mThumbnailUrl = "";
 
     private ParcelableTrack(Parcel in) {
         super();

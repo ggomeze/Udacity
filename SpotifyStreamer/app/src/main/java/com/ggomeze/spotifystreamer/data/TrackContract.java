@@ -74,8 +74,29 @@ public class TrackContract {
         public static final String CONTENT_ITEM_TYPE =
                 ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_TRACKS;
 
+        public static final String[] TRACK_COLUMNS = {
+                TrackEntry.TABLE_NAME + "." + TrackEntry._ID,
+                TrackEntry.COLUMN_TRACK_ID,
+                TrackEntry.COLUMN_ARTIST_FOREIGN_KEY,
+                TrackEntry.COLUMN_ALBUM_NAME,
+                TrackEntry.COLUMN_TRACK_URL,
+                TrackEntry.COLUMN_IMAGE_MED,
+                TrackEntry.COLUMN_TRACK_NAME,
+                TrackEntry.TABLE_NAME + "." + TrackEntry.COLUMN_IMAGE_THUMB
+        };
 
-        public static Uri buildTrackUri(long id) {
+        // These indices are tied to TRACK_COLUMNS.  If TRACK_COLUMNS changes, these must change.
+        public static final int COL_ID_INDEX = 0;
+        public static final int COL_TRACK_ID_INDEX = 1;
+        public static final int COL_ARTIST_FOREIGN_KEY_INDEX = 2;
+        public static final int COL_ALBUM_NAME_INDEX = 3;
+        public static final int COL_TRACK_URL_INDEX = 4;
+        public static final int COL_IMAGE_MED_INDEX = 5;
+        public static final int COL_TRACK_NAME_INDEX = 6;
+        public static final int COL_TRACK_IMAGE_THUMB_INDEX = 7;
+
+
+        public static Uri buildTrackIdUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
 
@@ -86,6 +107,11 @@ public class TrackContract {
         public static Uri buildArtistFromTrackId(long trackId) {
             return CONTENT_URI.buildUpon().appendPath(Long.toString(trackId))
                     .appendPath(ArtistContract.PATH_ARTISTS).build();
+        }
+
+        public static Uri buildTracksFromAnArtist(long artistId) {
+            return ArtistContract.ArtistEntry.CONTENT_URI.buildUpon().appendPath(Long.toString(artistId)).
+                    appendPath(PATH_TRACKS).build();
         }
 
         // Get fields from Uri
@@ -99,6 +125,10 @@ public class TrackContract {
             }
 
             return trackId;
+        }
+
+        public static String getSpotifyArtistIdQueryParamterFromUri(Uri uri) {
+            return uri.getQueryParameter(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID);
         }
     }
 }

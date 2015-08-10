@@ -15,134 +15,90 @@
  */
 package com.ggomeze.spotifystreamer.tasks;
 
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.ggomeze.spotifystreamer.R;
-import com.ggomeze.spotifystreamer.adapters.TrackAdapter;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
-import com.ggomeze.spotifystreamer.models.ParcelableTrack;
+import com.ggomeze.spotifystreamer.utils.Utility;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Track;
-import kaaes.spotify.webapi.android.models.Tracks;
 
-public class FetchArtistTopTracksTask extends AsyncTask<String, Void, Tracks> {
+public class FetchArtistTopTracksTask extends AsyncTask<Long, Void, List<Track>> {
 
     private final String LOG_TAG = FetchArtistTopTracksTask.class.getSimpleName();
 
-    private WeakReference<TrackAdapter> mTrackAdapter;
-    private WeakReference<ArrayList<ParcelableTrack>> mReturnedTracks;
     private WeakReference<Context> mContext;
 
-    private String mSpotifyArtistId;
+    private long mArtistId;
 
-    public FetchArtistTopTracksTask(Context context, TrackAdapter trackAdapter, ArrayList<ParcelableTrack> returnedTracks) {
+    public FetchArtistTopTracksTask(Context context) {
         mContext = new WeakReference<Context>(context);
-        mTrackAdapter = new WeakReference<TrackAdapter>(trackAdapter);
-        mReturnedTracks = new WeakReference<ArrayList<ParcelableTrack>>(returnedTracks);
     }
 
     private boolean DEBUG = true;
-
-    /**
-     * Helper method to handle insertion of a new track in the database.
-     *
-     * @param aTrack Track to be inserted
-     * @return the row ID of the added track.
-     */
-    long addTrack(Track aTrack) {
-        long trackId = -1;
-        Context context = mContext.get();
-        if (context != null) {
-            // First, check if the artist with this artist_id exists in the db
-            Cursor cursor = context.getContentResolver().query(
-                    TrackContract.TrackEntry.CONTENT_URI,
-                    null,   // projection
-                    TrackContract.TrackEntry.COLUMN_TRACK_ID + " = ?",   //where clause
-                    new String[]{aTrack.id},   // Values for the "where" clause
-                    null    // sort order
-            );
-            if (cursor.moveToFirst()) {// If it exists, return the current ID
-                trackId = cursor.getLong(cursor.getColumnIndex(TrackContract.TrackEntry._ID));
-                cursor.close();
-            } else {// Otherwise, insert it using the content resolver and the base URI
-                Uri insertedArtistUri = context.getContentResolver().insert(TrackContract.TrackEntry.CONTENT_URI,
-                        new ParcelableTrack(aTrack).getTrackContentValues());
-                trackId = ContentUris.parseId(insertedArtistUri);
-            }
-        }
-        return trackId;
-    }
 
     @Override
     protected void onPreExecute() {
 
     }
     @Override
-    protected Tracks doInBackground(String... artistsIDs) {
+    protected List<Track> doInBackground(Long... artistsIDs) {
         Context context = mContext.get();
-        if(artistsIDs.length == 0 || context == null) {
+        if(artistsIDs.length == 0) {
             return null;
         }
-        mSpotifyArtistId = artistsIDs[0];
+
+        mArtistId = artistsIDs[0];
 
         SpotifyService spotify = new SpotifyApi().getService();
         Map artistTopTracksParams = new HashMap<String,String>();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         artistTopTracksParams.put(context.getString(R.string.spotify_country_param), sharedPref.getString(context.getString(R.string.pref_country_key), "US"));
+        List<Track> returnedTracks = null;
+
         try {
-            return spotify.getArtistTopTrack(mSpotifyArtistId, artistTopTracksParams);
+            if (context != null) {
+                //Get spotifyId from database before calling Spotify
+                Cursor cursor = context.getContentResolver().query(
+                        ArtistContract.ArtistEntry.CONTENT_URI,
+                        new String[]{ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID}, // leaving "columns" null just returns all the columns.
+                        ArtistContract.ArtistEntry._ID + "= ?", // cols for "where" clause
+                        new String[]{Long.toString(mArtistId)}, // values for "where" clause
+                        null  // sort order
+                );
+                if(cursor.moveToNext()) {
+                    returnedTracks = spotify.getArtistTopTrack(cursor.getString(0), artistTopTracksParams).tracks;
+                    if (returnedTracks != null && returnedTracks.size() > 0) {
+                        context.getContentResolver().bulkInsert(TrackContract.TrackEntry.buildTracksFromAnArtist(mArtistId),
+                                Utility.getContentValuesFromTrackList(returnedTracks, mArtistId));
+                    }
+                }
+            }
+            return returnedTracks;
         } catch (Exception exception) {
             Log.e(LOG_TAG, context.getString(R.string.connection_error));
             return null;
         }
     }
     @Override
-    protected void onPostExecute(Tracks returnedTracks) {
-        TrackAdapter trackAdapter = mTrackAdapter.get();
-        ArrayList<ParcelableTrack> returnedTracksArray = mReturnedTracks.get();
-
-        if (trackAdapter == null || returnedTracksArray == null) return;
+    protected void onPostExecute(List<Track> returnedTracks) {
         Context context = mContext.get();
-
         if (returnedTracks != null) {
-            if (returnedTracks.tracks.size() > 0) {
-                trackAdapter.clear();
-                if (context != null) {
-                    Cursor cursor = context.getContentResolver().query(
-                            ArtistContract.ArtistEntry.CONTENT_URI,
-                            new String[]{ArtistContract.ArtistEntry._ID},   // projection
-                            ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID + " = ?",
-                            new String[]{mSpotifyArtistId},   // Values for the "where" clause
-                            null    // sort order
-                    );
-                    if (cursor.moveToNext()){
-                        long artistId = cursor.getLong(cursor.getColumnIndex(ArtistContract.ArtistEntry._ID));
-                        cursor.close();
-                        for (Track track : returnedTracks.tracks) {
-                            ParcelableTrack parcelableTrack = new ParcelableTrack(track);
-                            returnedTracksArray.add(parcelableTrack);
-                            addTrack(track);
-                        }
-                    }
-                }
-            } else {
+            if (returnedTracks.isEmpty()) {
                 if (context != null) {
                     Toast.makeText(context, context.getString(R.string.no_tracks_found), Toast.LENGTH_SHORT).show();
                 }

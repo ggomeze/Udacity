@@ -55,11 +55,11 @@ public class ArtistCursorAdapter extends CursorAdapter {
 
     private ParcelableArtist convertCursorRowToParseableArtist(Cursor cursor) {
         Artist artist = new Artist();
-        artist.id = cursor.getString(cursor.getColumnIndex(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID));
-        artist.name = cursor.getString(cursor.getColumnIndex(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME));
+        artist.id = cursor.getString(ArtistContract.ArtistEntry.COL_SPOTIFY_ARTIST_ID_INDEX);
+        artist.name = cursor.getString(ArtistContract.ArtistEntry.COL_ARTIST_NAME_INDEX);
         ParcelableArtist parcelableArtist = new ParcelableArtist(artist);
-        parcelableArtist.mThumbnailUrl = cursor.getString(cursor.getColumnIndex(ArtistContract.ArtistEntry.COLUMN_IMAGE_THUMB));
+        parcelableArtist.mThumbnailUrl = cursor.getString(ArtistContract.ArtistEntry.COL_ARTIST_IMAGE_THUMB_INDEX);
         return parcelableArtist;
     }
-    
+
 }

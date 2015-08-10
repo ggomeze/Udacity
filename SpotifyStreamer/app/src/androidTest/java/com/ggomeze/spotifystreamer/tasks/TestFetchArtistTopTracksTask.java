@@ -20,6 +20,7 @@ import android.database.Cursor;
 import android.test.AndroidTestCase;
 
 import com.ggomeze.spotifystreamer.data.ArtistContract;
+import com.ggomeze.spotifystreamer.utils.Utility;
 
 public class TestFetchArtistTopTracksTask extends AndroidTestCase{
     static final String ADD_SPOTIFY_ARTIST_ID = "ag2jeic9sl92g4n1ndh";
@@ -38,8 +39,7 @@ public class TestFetchArtistTopTracksTask extends AndroidTestCase{
                 ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID + " = ?",
                 new String[]{ADD_SPOTIFY_ARTIST_ID});
 
-        FetchArtistsTask fwt = new FetchArtistsTask(getContext(), null, null);
-        long artistId = fwt.addArtist(ADD_SPOTIFY_ARTIST_ID, ADD_ARTIST_NAME, ADD_IMAGE_THUMB);
+        long artistId = Utility.addArtist(getContext(), ADD_SPOTIFY_ARTIST_ID, ADD_ARTIST_NAME, ADD_IMAGE_THUMB);
 
         // does addLocation return a valid record ID?
         assertFalse("Error: addArtist returned an invalid ID on insert",
@@ -80,7 +80,7 @@ public class TestFetchArtistTopTracksTask extends AndroidTestCase{
                     artistCursor.moveToNext());
 
             // add the location again
-            long newArtistId = fwt.addArtist(ADD_SPOTIFY_ARTIST_ID, ADD_ARTIST_NAME, ADD_IMAGE_THUMB);
+            long newArtistId = Utility.addArtist(getContext(), ADD_SPOTIFY_ARTIST_ID, ADD_ARTIST_NAME, ADD_IMAGE_THUMB);
 
             assertEquals("Error: inserting an artist again should return the same ID",
                     artistId, newArtistId);
