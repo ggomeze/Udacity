@@ -1,5 +1,6 @@
 package com.ggomeze.spotifystreamer.fragments;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -15,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
@@ -42,6 +44,9 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private ImageButton mPreviousButton;
     private ImageButton mPlayButton;
     private ImageButton mNextButton;
+
+    private ContentValues[] mReturnedTracks;
+    private int mCurrentItem = 0;
 
     //Mandatory empty constructor for the activity to instantiate
     public PlayerFragment() {
@@ -73,7 +78,50 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
         getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
 
+        mPreviousButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                moveToPrevious();
+            }
+        });
+
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                moveToNext();
+            }
+        });
+
+        mPlayButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                play();
+            }
+        });
+
         return fragment;
+    }
+
+    public void moveToNext(){
+        if(mCurrentItem == mReturnedTracks.length - 1)
+            mCurrentItem = 0;
+        else
+            mCurrentItem++;
+        updateUI();
+    }
+
+    public void moveToPrevious(){
+        if(mCurrentItem == 0)
+            mCurrentItem = mReturnedTracks.length - 1;
+        else
+            mCurrentItem--;
+        updateUI();
+    }
+
+    public void play() {
+        //Update to pause button
+        //Stream track
+        Toast.makeText(getActivity(), mReturnedTracks[mCurrentItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL),Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -89,11 +137,13 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         // Create and return a CursorLoader that will take care of
         // creating a Cursor for the data being displayed.
         ArrayList<String> projectionArray = new ArrayList<String>(Arrays.asList(TrackContract.TrackEntry.TRACK_COLUMNS));
-        projectionArray.add(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME);
+        projectionArray.add(ArtistContract.ArtistEntry.TABLE_NAME + "." + ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME);
         String[] projection = new String[projectionArray.size()];
         projection = projectionArray.toArray(projection);
+
+        long artistId = ArtistContract.ArtistEntry.getArtistIdFromUri(mTrackUri);
         return new CursorLoader(getActivity(),
-                mTrackUri,
+                TrackContract.TrackEntry.buildTracksFromAnArtist(artistId),
                 projection,   //projection
                 null,   //where clause
                 null,   //values for where clause
@@ -105,19 +155,40 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         Log.v(LOG_TAG, "Got the cursor back");
 
-        if (data.moveToNext()) {
-            String thumbnailUrl = data.getString(data.getColumnIndex(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB));
-            mTrackName.setText(data.getString(data.getColumnIndex(TrackContract.TrackEntry.COLUMN_TRACK_NAME)));
-            mAlbumName.setText(data.getString(data.getColumnIndex(TrackContract.TrackEntry.COLUMN_ALBUM_NAME)));
-            mArtistName.setText(data.getString(data.getColumnIndex(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME)));
+        mReturnedTracks = new ContentValues[data.getCount()];
+        long trackId = TrackContract.TrackEntry.getTrackIdFromArtistUri(mTrackUri);
 
-            if (thumbnailUrl.isEmpty()) {
-                Picasso.with(getActivity()).load(R.drawable.artist_placeholder).into(mAlbumAvatar);
-            } else {
-                Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
-            }
+        for(int i = 0; data.moveToNext() ; i++) {
+            ContentValues values = new ContentValues(data.getColumnCount());
+            long id = data.getInt(0);
+            values.put(TrackContract.TrackEntry._ID, id);
+            values.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, data.getString(1));
+            values.put(TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, data.getInt(2));
+            values.put(TrackContract.TrackEntry.COLUMN_ALBUM_NAME, data.getString(3));
+            values.put(TrackContract.TrackEntry.COLUMN_TRACK_URL, data.getString(4));
+            values.put(TrackContract.TrackEntry.COLUMN_IMAGE_MED, data.getString(5));
+            values.put(TrackContract.TrackEntry.COLUMN_TRACK_NAME, data.getString(6));
+            values.put(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB, data.getString(7));
+            values.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, data.getString(8));
+            mReturnedTracks[i] = values;
+            if (id==trackId) mCurrentItem=i;
         }
 
+        updateUI();
+    }
+
+    private void updateUI() {
+        ContentValues values = mReturnedTracks[mCurrentItem];
+        String thumbnailUrl = values.getAsString(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB);
+        mTrackName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_NAME));
+        mAlbumName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_ALBUM_NAME));
+        mArtistName.setText(values.getAsString(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME));
+
+        if (thumbnailUrl.isEmpty()) {
+            Picasso.with(getActivity()).load(R.drawable.artist_placeholder).into(mAlbumAvatar);
+        } else {
+            Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
+        }
     }
 
     @Override

@@ -116,7 +116,7 @@
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:id="@+id/next_button"
-                android:src="@android:drawable/ic_media_next" />
+                android:src="@android:drawable/ic_media_next"/>
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

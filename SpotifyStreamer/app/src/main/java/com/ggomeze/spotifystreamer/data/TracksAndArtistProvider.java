@@ -155,7 +155,7 @@ public class TracksAndArtistProvider extends ContentProvider {
         String selection = trackArtistIdSelection;
         String[] selectionArgs = new String[]{Long.toString(artistId)};
 
-        return tracksQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
+        return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
                 projection,
                 selection,
                 selectionArgs,
