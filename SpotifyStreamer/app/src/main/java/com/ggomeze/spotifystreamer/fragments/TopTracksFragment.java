@@ -78,6 +78,7 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
                             .setData(TrackContract.TrackEntry.buildTrackFromArtistAndTrack(
                                             cursor.getLong(TrackContract.TrackEntry.COL_ARTIST_FOREIGN_KEY_INDEX),
                                                     cursor.getLong(TrackContract.TrackEntry.COL_ID_INDEX)));//artists/#/tracks/#
+                    //TODO send track id from the list to start with
                     startActivity(player);
                 }
             }
