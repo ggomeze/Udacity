@@ -16,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.ggomeze.spotifystreamer.R;
+import com.ggomeze.spotifystreamer.activities.PlayerActivity;
 import com.ggomeze.spotifystreamer.adapters.TrackCursorAdapter;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
@@ -65,20 +66,34 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
         View fragment = inflater.inflate(R.layout.fragment_detail, container, false);
         ListView artistList = (ListView)fragment.findViewById(R.id.artist_top_tracks);
         artistList.setAdapter(mTrackCursorAdapter);
+
         artistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //TODO Play the track
+                // CursorAdapter returns a cursor at the correct position for getItem(), or null
+                // if it cannot seek to that position.
+                Cursor cursor = (Cursor) mTrackCursorAdapter.getItem(position);
+                if (cursor != null) {
+                    Intent player = new Intent(getActivity(), PlayerActivity.class)
+                            .setData(TrackContract.TrackEntry.buildTrackFromArtistAndTrack(
+                                            cursor.getLong(TrackContract.TrackEntry.COL_ARTIST_FOREIGN_KEY_INDEX),
+                                                    cursor.getLong(TrackContract.TrackEntry.COL_ID_INDEX)));//artists/#/tracks/#
+                    startActivity(player);
+                }
             }
         });
 
         if (savedInstanceState != null && savedInstanceState.containsKey(RESTURNED_TRACKS)) {
             mReturnedTracks.addAll(savedInstanceState.<ParcelableTrack>getParcelableArrayList(RESTURNED_TRACKS));
         } else if (mArtistId > 0) {
-            new FetchArtistTopTracksTask(getActivity()).execute(mArtistId);
+            updateTopTracks();
         }
 
         return fragment;
+    }
+
+    private void updateTopTracks() {
+        new FetchArtistTopTracksTask(getActivity()).execute(mArtistId);
     }
 
     @Override

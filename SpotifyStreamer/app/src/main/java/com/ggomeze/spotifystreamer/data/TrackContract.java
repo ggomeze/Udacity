@@ -114,6 +114,11 @@ public class TrackContract {
                     appendPath(PATH_TRACKS).build();
         }
 
+        public static Uri buildTrackFromArtistAndTrack(long artistId, long trackId) {
+            return ArtistContract.ArtistEntry.CONTENT_URI.buildUpon().appendPath(Long.toString(artistId)).
+                    appendPath(PATH_TRACKS).appendPath(Long.toString(trackId)).build();
+        }
+
         // Get fields from Uri
         public static long getTrackIdFromUri(Uri uri) {
             long trackId = -1L;
@@ -125,10 +130,6 @@ public class TrackContract {
             }
 
             return trackId;
-        }
-
-        public static String getSpotifyArtistIdQueryParamterFromUri(Uri uri) {
-            return uri.getQueryParameter(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID);
         }
     }
 }
