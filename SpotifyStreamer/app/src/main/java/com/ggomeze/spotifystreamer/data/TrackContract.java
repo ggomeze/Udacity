@@ -131,5 +131,18 @@ public class TrackContract {
 
             return trackId;
         }
+
+        // Get fields from Uri
+        public static long getTrackIdFromArtistUri(Uri uri) {
+            long trackId = -1L;
+
+            try {
+                trackId = Long.parseLong(uri.getLastPathSegment());
+            } catch (NumberFormatException e) {
+                Log.e(LOG_TAG, "Error parsing track ID");
+            }
+
+            return trackId;
+        }
     }
 }

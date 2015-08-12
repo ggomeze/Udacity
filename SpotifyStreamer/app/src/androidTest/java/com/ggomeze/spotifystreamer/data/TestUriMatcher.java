@@ -26,7 +26,6 @@ import android.test.AndroidTestCase;
     a nice compromise between data hiding and testability.
  */
 public class TestUriMatcher extends AndroidTestCase {
-    private static final String TRACK_NAME_QUERY = "Cold Play";
     private static final long TRACK_ID_QUERY = 12345L;
     private static final long ARTIST_ID_QUERY = 67890L;
 
@@ -36,6 +35,10 @@ public class TestUriMatcher extends AndroidTestCase {
     // content://com.ggomeze.spotifystreamer/tracks/#/artists"
     private static final Uri TEST_TRACKS_WITH_ARTISTS_DIR = TrackContract.TrackEntry.buildArtistFromTrackId(
             TRACK_ID_QUERY);
+
+    // content://com.ggomeze.spotifystreamer/artist/#/tracks/#"
+    private static final Uri TEST_ARTIST_TRACK_DIR = TrackContract.TrackEntry.buildTrackFromArtistAndTrack(
+            ARTIST_ID_QUERY, TRACK_ID_QUERY);
 
     // content://com.ggomeze.spotifystreamer/artists"
     private static final Uri TEST_ARTIST_DIR =ArtistContract.ArtistEntry.CONTENT_URI;
@@ -52,6 +55,8 @@ public class TestUriMatcher extends AndroidTestCase {
                 testMatcher.match(TEST_TRACKS_DIR), TracksAndArtistProvider.TRACKS);
         assertEquals("Error: The TRACK ARTISTS URI was matched incorrectly.",
                 testMatcher.match(TEST_TRACKS_WITH_ARTISTS_DIR), TracksAndArtistProvider.TRACK_ARTISTS);
+        assertEquals("Error: The TRACK ARTISTS URI was matched incorrectly.",
+                testMatcher.match(TEST_ARTIST_TRACK_DIR), TracksAndArtistProvider.ARTIST_TRACK_ID);
         assertEquals("Error: The ARTISTS URI was matched incorrectly.",
                 testMatcher.match(TEST_ARTIST_DIR), TracksAndArtistProvider.ARTISTS);
     }

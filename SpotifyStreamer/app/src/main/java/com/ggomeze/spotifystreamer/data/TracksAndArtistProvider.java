@@ -94,11 +94,11 @@ public class TracksAndArtistProvider extends ContentProvider {
             ArtistContract.ArtistEntry.TABLE_NAME +
                     "." +ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME + " = ? ";
 
-    //artists.artist_id = ? AND track_id = ?
+    //tracks.id = ? AND tracks.artistId = ?
     private static final String artistIdAndTrackIdSelection =
-            ArtistContract.ArtistEntry.TABLE_NAME +
-                    "." + ArtistContract.ArtistEntry._ID + " = ? AND " +
-                    TrackContract.TrackEntry._ID + " >= ? ";
+            TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY + " = ? AND " +
+                    TrackContract.TrackEntry.TABLE_NAME +
+                    "." + TrackContract.TrackEntry._ID + " >= ? ";
 
     private Cursor getTracksBy(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         if(selection != null && selection.contains(ArtistContract.ArtistEntry.COLUMN_SPOTIFY_ARTIST_ID)) {
@@ -184,6 +184,22 @@ public class TracksAndArtistProvider extends ContentProvider {
         );
     }
 
+    private Cursor getTrackByArtistAndTrackId(Uri uri, String[] projection, String sortOrder) {
+        long artistId = ArtistContract.ArtistEntry.getArtistIdFromUri(uri);
+        long trackId = TrackContract.TrackEntry.getTrackIdFromArtistUri(uri);
+        String selection = artistIdAndTrackIdSelection;
+        String[] selectionArgs = new String[]{Long.toString(artistId), Long.toString(trackId)};
+
+        return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
+                projection,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                sortOrder
+        );
+    }
+
     static UriMatcher buildUriMatcher() {
         // 1) The code passed into the constructor represents the code to return for the root
         // URI.  It's common to use NO_MATCH as the code for this case. Add the constructor below.
@@ -246,20 +262,20 @@ public class TracksAndArtistProvider extends ContentProvider {
         // and query the database accordingly.
         Cursor retCursor;
         switch (sUriMatcher.match(uri)) {
-            // "/tracks"
-            case TRACKS:
+            case TRACKS:// "/tracks"
                 retCursor = getTracksBy(projection, selection, selectionArgs, sortOrder);
                 break;
-            // "/artists"
-            case ARTISTS:
+            case ARTISTS:// "/artists"
                 retCursor = getArtistsBy(projection, selection, selectionArgs, sortOrder);
                 break;
-            // "/artist/#/tracks"
-            case ARTIST_TRACKS:
+            case ARTIST_TRACKS:// "/artist/#/tracks"
                 retCursor = getTracksByArtistId(uri, projection, sortOrder);
                 break;
-            case TRACK_ARTISTS:
+            case TRACK_ARTISTS://"tracks/#/artists"
                 retCursor = getArtistFromTrack(uri, projection, sortOrder);
+                break;
+            case ARTIST_TRACK_ID://"/artist/#/tracks/#"
+                retCursor = getTrackByArtistAndTrackId(uri, projection, sortOrder);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
