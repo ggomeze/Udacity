@@ -24,6 +24,7 @@ import android.widget.Toast;
 import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
+import com.ggomeze.spotifystreamer.listeners.MediaPlayerListener;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import java.util.Arrays;
 /**
  * Created by ggomeze on 12/08/15.
  */
-public class PlayerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>, MediaPlayer.OnPreparedListener{
+public class PlayerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
     public static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
@@ -54,6 +55,8 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private int mCurrentItem = 0;
 
     private MediaPlayer mMediaPlayer;
+    private boolean bPlayerOnPaused = false; //On pause state player
+    private boolean bButtonPauseDisplayed = false; //Button pause displayed
 
     //Mandatory empty constructor for the activity to instantiate
     public PlayerFragment() {
@@ -86,7 +89,9 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        mMediaPlayer.setOnPreparedListener(this);
+        MediaPlayerListener listener = new MediaPlayerListener(this);
+        mMediaPlayer.setOnPreparedListener(listener);
+        mMediaPlayer.setOnCompletionListener(listener);
 
         getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
 
@@ -107,7 +112,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         mPlayButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                play();
+                clickedOnMiddleButton();
             }
         });
 
@@ -122,7 +127,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         getLoaderManager().destroyLoader(FETCH_TRACKS_LOADER);
     }
 
-    public void moveToNext(){
+    private void moveToNext(){
         if(mCurrentItem == mReturnedTracks.length - 1)
             mCurrentItem = 0;
         else
@@ -130,7 +135,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         updateTrackAndPlay();
     }
 
-    public void moveToPrevious(){
+    private void moveToPrevious(){
         if(mCurrentItem == 0)
             mCurrentItem = mReturnedTracks.length - 1;
         else
@@ -138,8 +143,31 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         updateTrackAndPlay();
     }
 
+    private void clickedOnMiddleButton() {
+        mPlayButton.setImageResource(bButtonPauseDisplayed ? android.R.drawable.ic_media_play : android.R.drawable.ic_media_pause);
+
+        if(mMediaPlayer.isPlaying()) {//Playing: do a pause.
+            setPlayerButtonOnPause(false);
+            bPlayerOnPaused = true;
+            mMediaPlayer.pause();
+        } else if (bPlayerOnPaused){ //Paused: Resume.
+            setPlayerButtonOnPause(true);
+            mMediaPlayer.start();
+        } else if (bButtonPauseDisplayed) { //idle, initialized, preparing, prepared and button on paused ("playing")
+            setPlayerButtonOnPause(false);
+            mMediaPlayer.reset();
+        } else {//idle, initialized, preparing, prepared and button on play
+            setPlayerButtonOnPause(true);
+            play();
+        }
+    }
+
+    public void setPlayerButtonOnPause(boolean onPause) {
+        bButtonPauseDisplayed = onPause;
+        mPlayButton.setImageResource(bButtonPauseDisplayed ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play);
+    }
+
     public void play() {
-        //TODO Update to pause button if playing
         mMediaPlayer.reset();
         try {
             String dataSource = mReturnedTracks[mCurrentItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL);
@@ -150,12 +178,6 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         } catch (IOException ioException) {
             Toast.makeText(getActivity(), "IOException  Thrown", Toast.LENGTH_SHORT).show();
         }
-
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
     }
 
     @Override
@@ -221,14 +243,10 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
         }
 
+        setPlayerButtonOnPause(true);
         play();
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {}
-
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-        mMediaPlayer.start();
-    }
 }
