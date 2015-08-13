@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +48,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private ImageButton mPreviousButton;
     private ImageButton mPlayButton;
     private ImageButton mNextButton;
+    private SeekBar mSeekBar;
 
     private ContentValues[] mReturnedTracks;
     private int mCurrentItem = 0;
@@ -80,6 +82,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         mPreviousButton = (ImageButton) fragment.findViewById(R.id.previous_button);
         mPlayButton = (ImageButton) fragment.findViewById(R.id.play_button);
         mNextButton = (ImageButton) fragment.findViewById(R.id.next_button);
+        mSeekBar = (SeekBar) fragment.findViewById(R.id.slider);
 
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -109,6 +112,14 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         });
 
         return fragment;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mMediaPlayer.release();
+        mMediaPlayer = null;
+        getLoaderManager().destroyLoader(FETCH_TRACKS_LOADER);
     }
 
     public void moveToNext(){
@@ -172,27 +183,29 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         Log.v(LOG_TAG, "Got the cursor back");
+        int count = data.getCount();
+        if (count > 0) {
+            mReturnedTracks = new ContentValues[count];
+            long trackId = TrackContract.TrackEntry.getTrackIdFromArtistUri(mTrackUri);
 
-        mReturnedTracks = new ContentValues[data.getCount()];
-        long trackId = TrackContract.TrackEntry.getTrackIdFromArtistUri(mTrackUri);
+            for(int i = 0; data.moveToNext() ; i++) {
+                ContentValues values = new ContentValues(data.getColumnCount());
+                long id = data.getInt(0);
+                values.put(TrackContract.TrackEntry._ID, id);
+                values.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, data.getString(1));
+                values.put(TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, data.getInt(2));
+                values.put(TrackContract.TrackEntry.COLUMN_ALBUM_NAME, data.getString(3));
+                values.put(TrackContract.TrackEntry.COLUMN_TRACK_URL, data.getString(4));
+                values.put(TrackContract.TrackEntry.COLUMN_IMAGE_MED, data.getString(5));
+                values.put(TrackContract.TrackEntry.COLUMN_TRACK_NAME, data.getString(6));
+                values.put(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB, data.getString(7));
+                values.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, data.getString(8));
+                mReturnedTracks[i] = values;
+                if (id==trackId) mCurrentItem=i;
+            }
 
-        for(int i = 0; data.moveToNext() ; i++) {
-            ContentValues values = new ContentValues(data.getColumnCount());
-            long id = data.getInt(0);
-            values.put(TrackContract.TrackEntry._ID, id);
-            values.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, data.getString(1));
-            values.put(TrackContract.TrackEntry.COLUMN_ARTIST_FOREIGN_KEY, data.getInt(2));
-            values.put(TrackContract.TrackEntry.COLUMN_ALBUM_NAME, data.getString(3));
-            values.put(TrackContract.TrackEntry.COLUMN_TRACK_URL, data.getString(4));
-            values.put(TrackContract.TrackEntry.COLUMN_IMAGE_MED, data.getString(5));
-            values.put(TrackContract.TrackEntry.COLUMN_TRACK_NAME, data.getString(6));
-            values.put(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB, data.getString(7));
-            values.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, data.getString(8));
-            mReturnedTracks[i] = values;
-            if (id==trackId) mCurrentItem=i;
+            updateTrackAndPlay();
         }
-
-        updateTrackAndPlay();
     }
 
     private void updateTrackAndPlay() {
