@@ -3,6 +3,8 @@ package com.ggomeze.spotifystreamer.fragments;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -23,13 +25,14 @@ import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
 import com.squareup.picasso.Picasso;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
  * Created by ggomeze on 12/08/15.
  */
-public class PlayerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+public class PlayerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>, MediaPlayer.OnPreparedListener{
 
     public static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
@@ -47,6 +50,8 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
     private ContentValues[] mReturnedTracks;
     private int mCurrentItem = 0;
+
+    private MediaPlayer mMediaPlayer;
 
     //Mandatory empty constructor for the activity to instantiate
     public PlayerFragment() {
@@ -75,6 +80,10 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         mPreviousButton = (ImageButton) fragment.findViewById(R.id.previous_button);
         mPlayButton = (ImageButton) fragment.findViewById(R.id.play_button);
         mNextButton = (ImageButton) fragment.findViewById(R.id.next_button);
+
+        mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mMediaPlayer.setOnPreparedListener(this);
 
         getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
 
@@ -107,7 +116,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             mCurrentItem = 0;
         else
             mCurrentItem++;
-        updateUI();
+        updateTrackAndPlay();
     }
 
     public void moveToPrevious(){
@@ -115,13 +124,22 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             mCurrentItem = mReturnedTracks.length - 1;
         else
             mCurrentItem--;
-        updateUI();
+        updateTrackAndPlay();
     }
 
     public void play() {
-        //Update to pause button
-        //Stream track
-        Toast.makeText(getActivity(), mReturnedTracks[mCurrentItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL),Toast.LENGTH_SHORT).show();
+        //TODO Update to pause button if playing
+        mMediaPlayer.reset();
+        try {
+            String dataSource = mReturnedTracks[mCurrentItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL);
+            mMediaPlayer.setDataSource(dataSource);
+            mMediaPlayer.prepareAsync();
+        } catch (IllegalArgumentException ilegalException) {
+            Toast.makeText(getActivity(), "IlegalException Thrown", Toast.LENGTH_SHORT).show();
+        } catch (IOException ioException) {
+            Toast.makeText(getActivity(), "IOException  Thrown", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     @Override
@@ -174,10 +192,10 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             if (id==trackId) mCurrentItem=i;
         }
 
-        updateUI();
+        updateTrackAndPlay();
     }
 
-    private void updateUI() {
+    private void updateTrackAndPlay() {
         ContentValues values = mReturnedTracks[mCurrentItem];
         String thumbnailUrl = values.getAsString(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB);
         mTrackName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_NAME));
@@ -189,8 +207,15 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         } else {
             Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
         }
+
+        play();
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {}
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        mMediaPlayer.start();
+    }
 }
