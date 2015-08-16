@@ -25,12 +25,24 @@ public class ArtistCursorAdapter extends CursorAdapter {
         super(context, cursor, flags);
     }
 
+    public static class ViewHolder {
+        public final TextView artistName;
+        public final ImageView avatar;
+
+        public ViewHolder(View view) {
+            artistName = (TextView) view.findViewById(R.id.artist_list_textview);
+            avatar = (ImageView) view.findViewById(R.id.avatar);
+        }
+    }
+
     /*
         Remember that these views are reused as needed.
      */
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
         View view = LayoutInflater.from(context).inflate(R.layout.artist_item, parent, false);
+        ViewHolder viewHolder = new ViewHolder(view);
+        view.setTag(viewHolder);
         return view;
     }
 
@@ -41,15 +53,14 @@ public class ArtistCursorAdapter extends CursorAdapter {
     public void bindView(View view, Context context, Cursor cursor) {
         ParcelableArtist artist = convertCursorRowToParseableArtist(cursor);
 
-        TextView artistName = (TextView) view.findViewById(R.id.artist_list_textview);
-        ImageView avatar = (ImageView) view.findViewById(R.id.avatar);
+        ViewHolder viewHolder = (ViewHolder) view.getTag();
 
-        artistName.setText(artist.name);
+        viewHolder.artistName.setText(artist.name);
         String thumbnailUrl = artist.mThumbnailUrl;
         if (thumbnailUrl.isEmpty()) {
-            Picasso.with(context).load(R.drawable.artist_placeholder).into(avatar);
+            Picasso.with(context).load(R.drawable.artist_placeholder).into(viewHolder.avatar);
         } else {
-            Picasso.with(context).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(avatar);
+            Picasso.with(context).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(viewHolder.avatar);
         }
     }
 

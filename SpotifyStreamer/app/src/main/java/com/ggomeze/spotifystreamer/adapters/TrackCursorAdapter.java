@@ -22,6 +22,18 @@ import kaaes.spotify.webapi.android.models.Track;
  */
 public class TrackCursorAdapter extends CursorAdapter {
 
+    public static class ViewHolder {
+        public final TextView trackName;
+        public final TextView albumName;
+        public final ImageView avatar;
+
+        public ViewHolder(View view) {
+            trackName = (TextView) view.findViewById(R.id.track_name);
+            albumName = (TextView) view.findViewById(R.id.album_name);
+            avatar = (ImageView) view.findViewById(R.id.album_avatar);
+        }
+    }
+
     public TrackCursorAdapter(Context context, Cursor cursor, int flags) {
         super(context, cursor, flags);
     }
@@ -32,6 +44,8 @@ public class TrackCursorAdapter extends CursorAdapter {
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
         View view = LayoutInflater.from(context).inflate(R.layout.track_item, parent, false);
+        ViewHolder viewHolder = new ViewHolder(view);
+        view.setTag(viewHolder);
         return view;
     }
 
@@ -42,18 +56,15 @@ public class TrackCursorAdapter extends CursorAdapter {
     public void bindView(View view, Context context, Cursor cursor) {
         ParcelableTrack track = convertCursorRowToParseableTrack(cursor);
 
-        TextView trackName = (TextView) view.findViewById(R.id.track_name);
-        TextView albumName = (TextView) view.findViewById(R.id.album_name);
-        ImageView avatar = (ImageView) view.findViewById(R.id.album_avatar);
-
-        trackName.setText(track.name);
-        albumName.setText(track.album.name);
+        ViewHolder viewHolder = (ViewHolder) view.getTag();
+        viewHolder.trackName.setText(track.name);
+        viewHolder.albumName.setText(track.album.name);
 
         String thumbnailUrl = track.mThumbnailUrl;
         if (thumbnailUrl.isEmpty()) {
-            Picasso.with(context).load(R.drawable.artist_placeholder).into(avatar);
+            Picasso.with(context).load(R.drawable.artist_placeholder).into(viewHolder.avatar);
         } else {
-            Picasso.with(context).load(track.mThumbnailUrl).placeholder(R.drawable.artist_placeholder).into(avatar);
+            Picasso.with(context).load(track.mThumbnailUrl).placeholder(R.drawable.artist_placeholder).into(viewHolder.avatar);
         }
     }
 
