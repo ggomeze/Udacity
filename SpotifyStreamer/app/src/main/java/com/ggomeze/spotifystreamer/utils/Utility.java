@@ -29,6 +29,7 @@ import com.ggomeze.spotifystreamer.models.ParcelableTrack;
 
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Track;
@@ -152,6 +153,12 @@ public class Utility {
         }
         ContentValues[] cvArray = new ContentValues[cVVector.size()];
         return cVVector.toArray(cvArray);
+    }
+
+    public static String convertMillisToText(int millis) {
+        return String.format("0:%02d",
+                TimeUnit.MILLISECONDS.toSeconds(millis) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
     }
 
 }

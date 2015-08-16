@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -40,11 +41,15 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
     static final int FETCH_TRACKS_LOADER = 0;
 
+    private int MILLISECONDS = 100;
+
     private Uri mTrackUri;
 
     private TextView mTrackName;
     private TextView mArtistName;
     private TextView mAlbumName;
+    private TextView mStartTime;
+    private TextView mEndTime;
     private ImageView mAlbumAvatar;
     private ImageButton mPreviousButton;
     private ImageButton mPlayButton;
@@ -57,6 +62,25 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private MediaPlayer mMediaPlayer;
     private boolean bPlayerOnPaused = false; //On pause state player
     private boolean bButtonPauseDisplayed = false; //Button pause displayed
+    private int mCurrentPosition;
+
+    private Handler mHandler;
+
+    Runnable mSeekBarUpdater = new Runnable() {
+        @Override
+        public void run() {
+            updateSeekBarWithPlayerPosition(); //this function can change value of mInterval.
+            mHandler.postDelayed(mSeekBarUpdater, MILLISECONDS);
+        }
+    };
+
+    void startUpdatingSeekBarTask() {
+        mSeekBarUpdater.run();
+    }
+
+    void stopUpdatingSeekBarTask() {
+        mHandler.removeCallbacks(mSeekBarUpdater);
+    }
 
     //Mandatory empty constructor for the activity to instantiate
     public PlayerFragment() {
@@ -81,17 +105,22 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         mTrackName = (TextView)fragment.findViewById(R.id.track_name);
         mArtistName = (TextView)fragment.findViewById(R.id.artist_name);
         mAlbumName = (TextView)fragment.findViewById(R.id.album_name);
+        mStartTime = (TextView)fragment.findViewById(R.id.start_time);
+        mEndTime = (TextView)fragment.findViewById(R.id.end_time);
         mAlbumAvatar = (ImageView) fragment.findViewById(R.id.album_avatar);
         mPreviousButton = (ImageButton) fragment.findViewById(R.id.previous_button);
         mPlayButton = (ImageButton) fragment.findViewById(R.id.play_button);
         mNextButton = (ImageButton) fragment.findViewById(R.id.next_button);
         mSeekBar = (SeekBar) fragment.findViewById(R.id.slider);
+        updateSeekBarWithPosition(0);
 
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         MediaPlayerListener listener = new MediaPlayerListener(this);
         mMediaPlayer.setOnPreparedListener(listener);
         mMediaPlayer.setOnCompletionListener(listener);
+        mSeekBar.setOnSeekBarChangeListener(listener);
+        mHandler = new Handler();
 
         getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
 
@@ -125,6 +154,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         mMediaPlayer.release();
         mMediaPlayer = null;
         getLoaderManager().destroyLoader(FETCH_TRACKS_LOADER);
+        stopUpdatingSeekBarTask();
     }
 
     private void moveToNext(){
@@ -132,6 +162,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             mCurrentItem = 0;
         else
             mCurrentItem++;
+        updateSeekBarWithPosition(0);
         updateTrackAndPlay();
     }
 
@@ -140,6 +171,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             mCurrentItem = mReturnedTracks.length - 1;
         else
             mCurrentItem--;
+        updateSeekBarWithPosition(0);
         updateTrackAndPlay();
     }
 
@@ -152,7 +184,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
             mMediaPlayer.pause();
         } else if (bPlayerOnPaused){ //Paused: Resume.
             setPlayerButtonOnPause(true);
-            mMediaPlayer.start();
+            startReadyPlayer();
         } else if (bButtonPauseDisplayed) { //idle, initialized, preparing, prepared and button on paused ("playing")
             setPlayerButtonOnPause(false);
             mMediaPlayer.reset();
@@ -164,7 +196,13 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
     public void setPlayerButtonOnPause(boolean onPause) {
         bButtonPauseDisplayed = onPause;
-        mPlayButton.setImageResource(bButtonPauseDisplayed ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play);
+        if(onPause) {
+            mPlayButton.setImageResource(android.R.drawable.ic_media_pause);
+            startUpdatingSeekBarTask();
+        } else {
+            mPlayButton.setImageResource(android.R.drawable.ic_media_play);
+            stopUpdatingSeekBarTask();
+        }
     }
 
     public void play() {
@@ -178,6 +216,53 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         } catch (IOException ioException) {
             Toast.makeText(getActivity(), "IOException  Thrown", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void startReadyPlayer(){
+        mMediaPlayer.seekTo(mCurrentPosition);
+        mMediaPlayer.start();
+    }
+
+    private void updateSeekBarWithPosition(int position) {
+        if (0 <= position && position <= 30000) {
+            mCurrentPosition = position;
+            mSeekBar.setProgress(mCurrentPosition);
+        }
+    }
+
+    private void updateSeekBarWithPlayerPosition() {
+        updateSeekBarWithPosition(mMediaPlayer.getCurrentPosition());
+    }
+
+    public void updatePlayerWithSeekBarPosition(int position) {
+        if (0 <= position && position <= 30000) {
+            mCurrentPosition = position;
+            if(mMediaPlayer.isPlaying())
+                mMediaPlayer.seekTo(mCurrentPosition);
+        }
+    }
+
+    private void updateTrackAndPlay() {
+        setPlayerButtonOnPause(true);
+
+        ContentValues values = mReturnedTracks[mCurrentItem];
+        String thumbnailUrl = values.getAsString(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB);
+        mTrackName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_NAME));
+        mAlbumName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_ALBUM_NAME));
+        mArtistName.setText(values.getAsString(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME));
+
+        if (thumbnailUrl.isEmpty()) {
+            Picasso.with(getActivity()).load(R.drawable.artist_placeholder).into(mAlbumAvatar);
+        } else {
+            Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
+        }
+
+        play();
+    }
+
+    public void updatePlayerTimers (String start, String end) {
+        mStartTime.setText(start);
+        mEndTime.setText(end);
     }
 
     @Override
@@ -228,23 +313,6 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
             updateTrackAndPlay();
         }
-    }
-
-    private void updateTrackAndPlay() {
-        ContentValues values = mReturnedTracks[mCurrentItem];
-        String thumbnailUrl = values.getAsString(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB);
-        mTrackName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_NAME));
-        mAlbumName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_ALBUM_NAME));
-        mArtistName.setText(values.getAsString(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME));
-
-        if (thumbnailUrl.isEmpty()) {
-            Picasso.with(getActivity()).load(R.drawable.artist_placeholder).into(mAlbumAvatar);
-        } else {
-            Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
-        }
-
-        setPlayerButtonOnPause(true);
-        play();
     }
 
     @Override

@@ -15,14 +15,14 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:id="@+id/artist_name"
-        android:text="Coldplay">
+        android:text="">
     </TextView>
     <TextView xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:id="@+id/album_name"
-        android:text="Ghost Stories">
+        android:text="">
     </TextView>
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
@@ -35,20 +35,22 @@
             android:layout_height="220dp"
             android:id="@+id/album_avatar"
             android:layout_margin="10dp"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@drawable/artist_placeholder" />
     </LinearLayout>
     <TextView xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:id="@+id/track_name"
-        android:text="A Sky Full of Stars">
+        android:text="">
     </TextView>
     <SeekBar
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/slider"
-        android:layout_gravity="center_vertical" />
+        android:layout_gravity="center_vertical"
+        android:max="30000"
+        android:progress="0"/>
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
