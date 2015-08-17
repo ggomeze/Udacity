@@ -23,9 +23,7 @@ import java.util.Set;
 public class TestUtilities extends AndroidTestCase {
 
     public static final String ARTIST_ID_IN_SPOTIFY_TEST = "askdasdjk23ko2l3k3";
-    public static final String TRACK_ID_IN_SPOTIFY_TEST = "asdkjsn932jkekejn34k233";
-    public static final long TRACK_ID_TEST = 12345;
-    public static final long ARTIST_ID_TEST = 67890;
+    private static final String TRACK_ID_IN_SPOTIFY_TEST = "asdkjsn932jkekejn34k233";
 
     static void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
         validateCursorNotEmpty(error, valueCursor);
@@ -33,7 +31,7 @@ public class TestUtilities extends AndroidTestCase {
         valueCursor.close();
     }
 
-    static void validateCursorNotEmpty(String error, Cursor valueCursor) {
+    private static void validateCursorNotEmpty(String error, Cursor valueCursor) {
         assertTrue("Empty cursor returned. " + error, valueCursor.moveToFirst());
     }
 

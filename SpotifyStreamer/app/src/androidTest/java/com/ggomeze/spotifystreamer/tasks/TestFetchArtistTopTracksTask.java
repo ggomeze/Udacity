@@ -23,9 +23,9 @@ import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.utils.Utility;
 
 public class TestFetchArtistTopTracksTask extends AndroidTestCase{
-    static final String ADD_SPOTIFY_ARTIST_ID = "ag2jeic9sl92g4n1ndh";
-    static final String ADD_ARTIST_NAME = "Michael Jackson";
-    static final String ADD_IMAGE_THUMB = "http://artist.image.thumb";
+    private static final String ADD_SPOTIFY_ARTIST_ID = "ag2jeic9sl92g4n1ndh";
+    private static final String ADD_ARTIST_NAME = "Michael Jackson";
+    private static final String ADD_IMAGE_THUMB = "http://artist.image.thumb";
 
     /*
         Students: uncomment testAddLocation after you have written the AddLocation function.

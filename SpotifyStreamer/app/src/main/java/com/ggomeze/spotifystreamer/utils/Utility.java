@@ -71,24 +71,6 @@ public class Utility {
     }
 
     /**
-     * Helper method to handle insertion of a new track in the database.
-     *
-     * @param aTrack Track to be inserted
-     * @return the row ID of the added track.
-     */
-    public static long addTrack(Context context, Track aTrack) {
-        long trackId = -1;
-        // First, check if the track with this track_id exists in the db
-        trackId = Utility.trackExist(context, aTrack.id);
-        if (trackId < 0) {// Doesn't exist
-            Uri insertedTrackUri = context.getContentResolver().insert(TrackContract.TrackEntry.CONTENT_URI,
-                    new ParcelableTrack(aTrack).getTrackContentValues());
-            trackId = ContentUris.parseId(insertedTrackUri);
-        }
-        return trackId;
-    }
-
-    /**
      * Helper method to handle insertion of a new artist in the database.
      *
      * @param spotifyArtistId The potify artist id.
@@ -97,9 +79,8 @@ public class Utility {
      * @return the row ID of the added location.
      */
     public static long addArtist(Context context, String spotifyArtistId, String artistName, String imageThumb) {
-        long artistId = -1L;
         // First, check if the artist with this artist_id exists in the db
-        artistId = Utility.artistExist(context, spotifyArtistId);
+        long artistId = Utility.artistExist(context, spotifyArtistId);
         if (artistId < 0) {// Doesn't exist
             ContentValues artistValues = new ContentValues();
             artistValues.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, artistName);
@@ -116,7 +97,7 @@ public class Utility {
      * @return an array of ContentValues with artists information
      */
     public static ContentValues[] getContentValuesFromArtistList(List<Artist> artists) {
-        Vector<ContentValues> cVVector = new Vector<ContentValues>(artists.size());
+        Vector<ContentValues> cVVector = new Vector<>(artists.size());
         for (Artist artist : artists) {
             ParcelableArtist parcelableArtist = new ParcelableArtist(artist);
             ContentValues artistValues = new ContentValues();
@@ -137,7 +118,7 @@ public class Utility {
      * @return an array of ContentValues with tracks information
      */
     public static ContentValues[] getContentValuesFromTrackList(List<Track> tracks, long artistId) {
-        Vector<ContentValues> cVVector = new Vector<ContentValues>(tracks.size());
+        Vector<ContentValues> cVVector = new Vector<>(tracks.size());
         for (Track track : tracks) {
             ParcelableTrack parcelableTrack = new ParcelableTrack(track);
             ContentValues trackValues = new ContentValues();

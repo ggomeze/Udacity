@@ -34,14 +34,13 @@ import java.util.ArrayList;
  */
 public class ArtistResultsFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    public static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
+    private static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
 
-    static final String RESTURNED_ARTISTS = "returnedArtists";
-    static final int FETCH_ARTISTS_LOADER = 0;
+    private static final String RESTURNED_ARTISTS = "returnedArtists";
+    private static final int FETCH_ARTISTS_LOADER = 0;
 
     private ArrayList<ParcelableArtist> mReturnedArtists;
     private ArtistCursorAdapter mArtistCursorAdapter;
-    private ListView mArtistList;
     private EditText mSearchText;
 
     //Mandatory empty constructor for the activity to instantiate
@@ -51,7 +50,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mReturnedArtists = new ArrayList<ParcelableArtist>();
+        mReturnedArtists = new ArrayList<>();
     }
 
     @Override
@@ -59,7 +58,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
                              Bundle savedInstanceState) {
         View fragment = inflater.inflate(R.layout.fragment_main, container, false);
 
-        mArtistList = (ListView)fragment.findViewById(R.id.list_view_artists);
+        ListView mArtistList = (ListView) fragment.findViewById(R.id.list_view_artists);
         mSearchText = (EditText) fragment.findViewById(R.id.search);
         mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -105,7 +104,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
         outState.putParcelableArrayList("returnedArtists", mReturnedArtists);
     }
 
-    public void searchArtists() {
+    private void searchArtists() {
         String text = mSearchText.getText().toString();
 
         if (!(text.isEmpty())) {
@@ -116,7 +115,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
 
     //Callbacks to implement for loaders
     @Override
-    public Loader onCreateLoader(int id, Bundle args) {
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Log.v(LOG_TAG, "In onCreateLoader");
         //If there is no loader with that ID, create one
         // Create and return a CursorLoader that will take care of

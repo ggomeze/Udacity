@@ -23,6 +23,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 
 import com.ggomeze.spotifystreamer.utils.Utility;
 
@@ -33,14 +34,14 @@ public class TracksAndArtistProvider extends ContentProvider {
     private SpotifyStreamerDbHelper mSpotifyStreamerDbHelper;
 
     static final int TRACKS = 100;
-    static final int TRACK_ID = 101;
-    static final int TRACK_NAME = 102;
+    private static final int TRACK_ID = 101;
+    private static final int TRACK_NAME = 102;
     static final int TRACK_ARTISTS = 103;
 
     static final int ARTISTS = 200;
-    static final int ARTIST_ID = 201;
-    static final int ARTIST_NAME = 202;
-    static final int ARTIST_TRACKS = 203;
+    private static final int ARTIST_ID = 201;
+    private static final int ARTIST_NAME = 202;
+    private static final int ARTIST_TRACKS = 203;
     static final int ARTIST_TRACK_ID = 204; // We could also remove this one
 
     private static final SQLiteQueryBuilder tracksAndArtistQueryBuilder;
@@ -125,21 +126,6 @@ public class TracksAndArtistProvider extends ContentProvider {
 
     private Cursor getArtistsBy(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         return artistsQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
-                projection,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                sortOrder
-        );
-    }
-
-    private Cursor getAllTracksByArtistName(Uri uri, String[] projection, String sortOrder) {
-        String artistName = ArtistContract.ArtistEntry.getArtistNameFromUri(uri);
-        String selection = artistNameSelection;
-        String[] selectionArgs = new String[]{artistName};
-
-        return tracksAndArtistQueryBuilder.query(mSpotifyStreamerDbHelper.getReadableDatabase(),
                 projection,
                 selection,
                 selectionArgs,
@@ -388,7 +374,7 @@ public class TracksAndArtistProvider extends ContentProvider {
     }
 
     @Override
-    public int bulkInsert(Uri uri, ContentValues[] values) {
+    public int bulkInsert(Uri uri, @NonNull ContentValues[] values) {
         final SQLiteDatabase db = mSpotifyStreamerDbHelper.getWritableDatabase();
         final int match = sUriMatcher.match(uri);
         int returnCount = 0;

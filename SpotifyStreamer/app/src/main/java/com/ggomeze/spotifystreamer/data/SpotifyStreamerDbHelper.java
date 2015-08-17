@@ -25,7 +25,7 @@ import com.ggomeze.spotifystreamer.data.TrackContract.TrackEntry;
 /**
  * Manages a local database for weather data.
  */
-public class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
+class SpotifyStreamerDbHelper extends SQLiteOpenHelper {
 
     static final String DATABASE_NAME = "spotifystreamer.db";
     // If you change the database schema, you must increment the database version.

@@ -31,10 +31,10 @@ import java.util.ArrayList;
  */
 public class TopTracksFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
-    public static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
+    private static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
 
-    static final String RESTURNED_TRACKS = "returnedTracks";
-    static final int FETCH_TRACKS_LOADER = 0;
+    private static final String RESTURNED_TRACKS = "returnedTracks";
+    private static final int FETCH_TRACKS_LOADER = 0;
 
     private ArrayList<ParcelableTrack> mReturnedTracks;
     private TrackCursorAdapter mTrackCursorAdapter;

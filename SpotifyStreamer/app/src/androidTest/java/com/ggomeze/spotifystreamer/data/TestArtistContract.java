@@ -24,7 +24,6 @@ import android.test.AndroidTestCase;
  */
 public class TestArtistContract extends AndroidTestCase {
 
-    private static final String TEST_TRACK_NAME = "/Imagine all the people";
     private static final long TEST_ARTIST_ID = 12939L;  // December 20th, 2014
 
     public void testGetArtistIdFromUri() {

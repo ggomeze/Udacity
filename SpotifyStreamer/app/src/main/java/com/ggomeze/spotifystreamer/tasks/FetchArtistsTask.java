@@ -24,7 +24,7 @@ public class FetchArtistsTask extends AsyncTask<String, Void, List<Artist>> {
     private WeakReference<Context> mContext;
 
     public FetchArtistsTask(Context context){
-        mContext = new WeakReference<Context>(context);
+        mContext = new WeakReference<>(context);
     }
 
     @Override

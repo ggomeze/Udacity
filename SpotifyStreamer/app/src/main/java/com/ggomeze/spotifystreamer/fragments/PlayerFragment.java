@@ -37,9 +37,9 @@ import java.util.Arrays;
  */
 public class PlayerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
-    public static final String LOG_TAG = PlayerFragment.class.getSimpleName();
+    private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
-    static final int FETCH_TRACKS_LOADER = 0;
+    private static final int FETCH_TRACKS_LOADER = 0;
 
     private int MILLISECONDS = 100;
 
@@ -66,7 +66,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
     private Handler mHandler;
 
-    Runnable mSeekBarUpdater = new Runnable() {
+    private Runnable mSeekBarUpdater = new Runnable() {
         @Override
         public void run() {
             updateSeekBarWithPlayerPosition(); //this function can change value of mInterval.
@@ -74,11 +74,11 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         }
     };
 
-    void startUpdatingSeekBarTask() {
+    private void startUpdatingSeekBarTask() {
         mSeekBarUpdater.run();
     }
 
-    void stopUpdatingSeekBarTask() {
+    private void stopUpdatingSeekBarTask() {
         mHandler.removeCallbacks(mSeekBarUpdater);
     }
 
@@ -205,7 +205,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         }
     }
 
-    public void play() {
+    private void play() {
         mMediaPlayer.reset();
         try {
             String dataSource = mReturnedTracks[mCurrentItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL);
@@ -272,7 +272,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         //If there is no loader with that ID, create one
         // Create and return a CursorLoader that will take care of
         // creating a Cursor for the data being displayed.
-        ArrayList<String> projectionArray = new ArrayList<String>(Arrays.asList(TrackContract.TrackEntry.TRACK_COLUMNS));
+        ArrayList<String> projectionArray = new ArrayList<>(Arrays.asList(TrackContract.TrackEntry.TRACK_COLUMNS));
         projectionArray.add(ArtistContract.ArtistEntry.TABLE_NAME + "." + ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME);
         String[] projection = new String[projectionArray.size()];
         projection = projectionArray.toArray(projection);

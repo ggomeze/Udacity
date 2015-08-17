@@ -14,10 +14,10 @@ import java.lang.ref.WeakReference;
 public class MediaPlayerListener implements MediaPlayer.OnPreparedListener,
         MediaPlayer.OnCompletionListener, SeekBar.OnSeekBarChangeListener {
 
-    WeakReference<PlayerFragment> mFragment;
+    private WeakReference<PlayerFragment> mFragment;
 
     public MediaPlayerListener(PlayerFragment fragment) {
-        mFragment = new WeakReference<PlayerFragment>(fragment);
+        mFragment = new WeakReference<>(fragment);
     }
     @Override
     public void onPrepared(MediaPlayer mp) {

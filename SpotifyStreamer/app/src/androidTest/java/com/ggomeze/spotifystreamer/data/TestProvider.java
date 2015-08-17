@@ -41,12 +41,10 @@ import java.util.Arrays;
  */
 public class TestProvider extends AndroidTestCase {
 
-    public static final String LOG_TAG = TestProvider.class.getSimpleName();
+    private static final String LOG_TAG = TestProvider.class.getSimpleName();
 
     private long mTestTrackId = 12345;
-    private long mTestArtistId = 67890;
     private String mTestTrackName = "track name";
-    private String mTestArtistName = "artist name";
 
     /*
        This helper function deletes all records from both database tables using the ContentProvider.
@@ -57,7 +55,7 @@ public class TestProvider extends AndroidTestCase {
        Students: Replace the calls to deleteAllRecordsFromDB with this one after you have written
        the delete functionality in the ContentProvider.
      */
-    public void deleteAllRecordsFromProvider() {
+    private void deleteAllRecordsFromProvider() {
         mContext.getContentResolver().delete(
                 TrackEntry.CONTENT_URI,
                 null,
@@ -108,7 +106,7 @@ public class TestProvider extends AndroidTestCase {
         Student: Refactor this function to use the deleteAllRecordsFromProvider functionality once
         you have implemented delete functionality there.
      */
-    public void deleteAllRecords() {
+    private void deleteAllRecords() {
         deleteAllRecordsFromProvider();
     }
 
@@ -313,9 +311,6 @@ public class TestProvider extends AndroidTestCase {
      */
     public void testBasicArtistQueries() {
         // insert our test records into the database
-        SpotifyStreamerDbHelper dbHelper = new SpotifyStreamerDbHelper(mContext);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-
         ContentValues artistValues = TestUtilities.createArtistValues();
         long artistRowId = TestUtilities.insertArtistValues(mContext, artistValues);
         assertTrue("Unable to Insert ArtistEntry into the Database", artistRowId != -1);
@@ -516,7 +511,7 @@ public class TestProvider extends AndroidTestCase {
 
     static private final int BULK_INSERT_RECORDS_TO_INSERT = 10;
 
-    static ContentValues[] createBulkInsertTestTracksValues(long artistId, int trackOffset) {
+    private static ContentValues[] createBulkInsertTestTracksValues(long artistId, int trackOffset) {
         ContentValues[] returnContentValues = new ContentValues[BULK_INSERT_RECORDS_TO_INSERT];
 
         for ( int i = 0; i < BULK_INSERT_RECORDS_TO_INSERT; i++ ) {

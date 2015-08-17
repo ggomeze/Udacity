@@ -28,7 +28,7 @@ public class TestDb extends AndroidTestCase {
     private SQLiteDatabase db;
 
     // Since we want each test to start with a clean slate
-    void deleteTheDatabase() {
+    private void deleteTheDatabase() {
         mContext.deleteDatabase(SpotifyStreamerDbHelper.DATABASE_NAME);
     }
 
@@ -131,7 +131,7 @@ public class TestDb extends AndroidTestCase {
         // if this fails, it means that your database doesn't contain all of the required location
         // entry columns
         assertTrue("Error: The database doesn't contain all of the required tracks entry columns",
-                artistColumnHashSet.isEmpty());
+                trackColumnHashSet.isEmpty());
 
         c.close();
     }

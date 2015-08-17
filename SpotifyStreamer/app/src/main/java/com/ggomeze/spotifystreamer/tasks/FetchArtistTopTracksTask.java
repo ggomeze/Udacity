@@ -43,13 +43,9 @@ public class FetchArtistTopTracksTask extends AsyncTask<Long, Void, List<Track>>
 
     private WeakReference<Context> mContext;
 
-    private long mArtistId;
-
     public FetchArtistTopTracksTask(Context context) {
-        mContext = new WeakReference<Context>(context);
+        mContext = new WeakReference<>(context);
     }
-
-    private boolean DEBUG = true;
 
     @Override
     protected void onPreExecute() {
@@ -62,16 +58,16 @@ public class FetchArtistTopTracksTask extends AsyncTask<Long, Void, List<Track>>
             return null;
         }
 
-        mArtistId = artistsIDs[0];
+        long mArtistId = artistsIDs[0];
 
         SpotifyService spotify = new SpotifyApi().getService();
-        Map artistTopTracksParams = new HashMap<String,String>();
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-        artistTopTracksParams.put(context.getString(R.string.spotify_country_param), sharedPref.getString(context.getString(R.string.pref_country_key), "US"));
+        Map artistTopTracksParams = new HashMap<>();
         List<Track> returnedTracks = null;
 
         try {
             if (context != null) {
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+                artistTopTracksParams.put(context.getString(R.string.spotify_country_param), sharedPref.getString(context.getString(R.string.pref_country_key), "US"));
                 //Get spotifyId from database before calling Spotify
                 Cursor cursor = context.getContentResolver().query(
                         ArtistContract.ArtistEntry.CONTENT_URI,

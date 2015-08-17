@@ -30,11 +30,11 @@ public class ArtistContract {
     // relationship between a domain name and its website.  A convenient string to use for the
     // content authority is the package name for the app, which is guaranteed to be unique on the
     // device.
-    public static final String CONTENT_AUTHORITY = "com.ggomeze.spotifystreamer";
+    private static final String CONTENT_AUTHORITY = "com.ggomeze.spotifystreamer";
 
     // Use CONTENT_AUTHORITY to create the base of all URI's which apps will use to contact
     // the content provider.
-    public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
+    private static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     // Possible paths (appended to base content URI for possible URI's)
     // For instance, content://com.ggomeze.spotifystreamer/tracks/ is a valid path for

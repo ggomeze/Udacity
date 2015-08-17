@@ -26,7 +26,6 @@ public class TestTrackContract extends AndroidTestCase {
 
     // intentionally includes a slash to make sure Uri is getting quoted correctly
     private static final String TEST_TRACK_NAME = "/Imagine all the people";
-    private static final long TEST_WEATHER_DATE = 1419033600L;  // December 20th, 2014
 
     /*
         Students: Uncomment this out to test your weather location function.
