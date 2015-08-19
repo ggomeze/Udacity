@@ -43,6 +43,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
 
     private int MILLISECONDS = 100;
 
+    private static final String CURRENT_ITEM = "current_item";
     private Uri mTrackUri;
 
     private TextView mTrackName;
@@ -57,7 +58,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private SeekBar mSeekBar;
 
     private ContentValues[] mReturnedTracks;
-    private int mCurrentItem = 0;
+    private int mCurrentPlayingItem = -1;
 
     private MediaPlayer mMediaPlayer;
     private boolean bPlayerOnPaused = false; //On pause state player
@@ -122,6 +123,10 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         mSeekBar.setOnSeekBarChangeListener(listener);
         mHandler = new Handler();
 
+        if (savedInstanceState != null && savedInstanceState.containsKey(CURRENT_ITEM)) {
+            mCurrentPlayingItem = savedInstanceState.getInt(CURRENT_ITEM);
+        }
+
         getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
 
         mPreviousButton.setOnClickListener(new View.OnClickListener() {
@@ -158,19 +163,19 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     private void moveToNext(){
-        if(mCurrentItem == mReturnedTracks.length - 1)
-            mCurrentItem = 0;
+        if(mCurrentPlayingItem == mReturnedTracks.length - 1)
+            mCurrentPlayingItem = 0;
         else
-            mCurrentItem++;
+            mCurrentPlayingItem++;
         updateSeekBarWithPosition(0);
         updateTrackAndPlay();
     }
 
     private void moveToPrevious(){
-        if(mCurrentItem == 0)
-            mCurrentItem = mReturnedTracks.length - 1;
+        if(mCurrentPlayingItem == 0)
+            mCurrentPlayingItem = mReturnedTracks.length - 1;
         else
-            mCurrentItem--;
+            mCurrentPlayingItem--;
         updateSeekBarWithPosition(0);
         updateTrackAndPlay();
     }
@@ -208,7 +213,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private void play() {
         mMediaPlayer.reset();
         try {
-            String dataSource = mReturnedTracks[mCurrentItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL);
+            String dataSource = mReturnedTracks[mCurrentPlayingItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL);
             mMediaPlayer.setDataSource(dataSource);
             mMediaPlayer.prepareAsync();
         } catch (IllegalArgumentException ilegalException) {
@@ -245,7 +250,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     private void updateTrackAndPlay() {
         setPlayerButtonOnPause(true);
 
-        ContentValues values = mReturnedTracks[mCurrentItem];
+        ContentValues values = mReturnedTracks[mCurrentPlayingItem];
         String thumbnailUrl = values.getAsString(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB);
         mTrackName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_NAME));
         mAlbumName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_ALBUM_NAME));
@@ -263,6 +268,12 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     public void updatePlayerTimers (String start, String end) {
         mStartTime.setText(start);
         mEndTime.setText(end);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(CURRENT_ITEM, mCurrentPlayingItem);
     }
 
     @Override
@@ -308,7 +319,7 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
                 values.put(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB, data.getString(7));
                 values.put(ArtistContract.ArtistEntry.COLUMN_ARTIST_NAME, data.getString(8));
                 mReturnedTracks[i] = values;
-                if (id==trackId) mCurrentItem=i;
+                if (mCurrentPlayingItem == -1 && id==trackId) mCurrentPlayingItem =i;
             }
 
             updateTrackAndPlay();

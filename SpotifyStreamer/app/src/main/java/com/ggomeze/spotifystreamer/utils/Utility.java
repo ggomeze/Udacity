@@ -19,9 +19,12 @@ package com.ggomeze.spotifystreamer.utils;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 
+import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
 import com.ggomeze.spotifystreamer.models.ParcelableArtist;
@@ -142,4 +145,8 @@ public class Utility {
                         TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
     }
 
+    public static String getCountryPreference(Context context) {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        return sharedPref.getString(context.getString(R.string.pref_country_key), "US");
+    }
 }

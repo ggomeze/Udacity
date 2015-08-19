@@ -24,13 +24,23 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.ggomeze.spotifystreamer.R;
+import com.ggomeze.spotifystreamer.fragments.TopTracksFragment;
+import com.ggomeze.spotifystreamer.utils.Utility;
 
 public class DetailActivity extends ActionBarActivity {
+
+    private String mCountryPreference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
+
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.top_artist_tracks, new TopTracksFragment(), TopTracksFragment.TOP_TRACKS_FRAGMENT_TAG)
+                    .commit();
+        }
 
         ActionBar ab = getSupportActionBar();
         ab.setTitle(getString(R.string.top_10_tracks));
@@ -39,6 +49,23 @@ public class DetailActivity extends ActionBarActivity {
         if (intent != null && intent.hasExtra(getString(R.string.album_intent_extra))){
             ab.setSubtitle(intent.getStringExtra(getString(R.string.album_intent_extra)));
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        String countryPreference = Utility.getCountryPreference(this);
+
+        // update the countryPreference in our second pane using the fragment manager
+        if (countryPreference != null && !countryPreference.equals(mCountryPreference)) {
+            TopTracksFragment ttf = (TopTracksFragment)getSupportFragmentManager().findFragmentByTag(TopTracksFragment.TOP_TRACKS_FRAGMENT_TAG);
+            if ( null != ttf ) {
+                ttf.onCountryPreferenceChanged(countryPreference);
+            }
+            mCountryPreference = countryPreference;
+        }
+
     }
 
     @Override

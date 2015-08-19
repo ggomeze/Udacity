@@ -1,20 +1,61 @@
 package com.ggomeze.spotifystreamer.activities;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.ggomeze.spotifystreamer.R;
+import com.ggomeze.spotifystreamer.fragments.ArtistResultsFragment;
+import com.ggomeze.spotifystreamer.fragments.TopTracksFragment;
+import com.ggomeze.spotifystreamer.utils.Utility;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements ArtistResultsFragment.Callback {
+
+    private String mCountryPreference;
+    private boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (findViewById(R.id.top_artist_tracks) != null) {
+            mTwoPane = true;
+
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.top_artist_tracks, new TopTracksFragment(), TopTracksFragment.TOP_TRACKS_FRAGMENT_TAG)
+                        .commit();
+            }
+        } else {
+            mTwoPane = false;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        String countryPreference = Utility.getCountryPreference(this);
+
+        // update the countryPreference in our second pane using the fragment manager
+        if (countryPreference != null && !countryPreference.equals(mCountryPreference)) {
+            ArtistResultsFragment arf = (ArtistResultsFragment)getSupportFragmentManager().findFragmentById(R.id.returned_artists);
+            if ( arf != null ) {
+                arf.onCountryPreferenceChanged();
+            }
+
+            TopTracksFragment ttf = (TopTracksFragment)getSupportFragmentManager().findFragmentByTag(TopTracksFragment.TOP_TRACKS_FRAGMENT_TAG);
+            if ( null != ttf ) {
+                ttf.onCountryPreferenceChanged(countryPreference);
+            }
+            mCountryPreference = countryPreference;
+        }
+
     }
 
 
@@ -40,5 +81,27 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemSelected(Uri artistTopTracksUri, String artistName) {
+        if (mTwoPane) {
+
+            Bundle args = new Bundle();
+            args.putParcelable(TopTracksFragment.ARTIST_TOP_TRACKS_URI, artistTopTracksUri);
+
+            TopTracksFragment fragment = new TopTracksFragment();
+            fragment.setArguments(args);
+
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.top_artist_tracks, fragment, TopTracksFragment.TOP_TRACKS_FRAGMENT_TAG)
+                    .commit();
+        } else {
+            Intent artistDetail = new Intent(this, DetailActivity.class)
+                    .setData(artistTopTracksUri);//artists/#/tracks
+            //TODO Remove this info and get it from database
+            artistDetail.putExtra(getString(R.string.album_intent_extra), artistName);
+            startActivity(artistDetail);
+        }
     }
 }

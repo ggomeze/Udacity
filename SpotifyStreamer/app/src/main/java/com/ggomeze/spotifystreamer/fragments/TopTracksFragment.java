@@ -31,6 +31,9 @@ import java.util.ArrayList;
  */
 public class TopTracksFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
+    public static final String ARTIST_TOP_TRACKS_URI = "artist_top_tracks_uri";
+    public static final String TOP_TRACKS_FRAGMENT_TAG = "DFTAG";
+
     private static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
 
     private static final String RESTURNED_TRACKS = "returnedTracks";
@@ -49,16 +52,22 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mReturnedTracks = new ArrayList<>();
+        if (getArguments() != null) {
+            mArtistTopTracksUri = getArguments().getParcelable(ARTIST_TOP_TRACKS_URI);
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        Intent intent = getActivity().getIntent();
-        if (intent == null) return null;
+        if (mArtistTopTracksUri == null) {
+            Intent intent = getActivity().getIntent();
+            if (intent == null || intent.getData() == null) return null;
 
-        mArtistTopTracksUri = intent.getData();
+            mArtistTopTracksUri = intent.getData();
+        }
+
         mArtistId = ArtistContract.ArtistEntry.getArtistIdFromUri(mArtistTopTracksUri);
 
         mTrackCursorAdapter = new TrackCursorAdapter(getActivity(), null, 0);
@@ -111,7 +120,8 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
+        if (mArtistTopTracksUri != null)
+            getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
     }
 
     @Override
@@ -138,6 +148,14 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         mTrackCursorAdapter.swapCursor(null);
+    }
+
+    /**
+     * Called from MainActivity on two pane mode, when a change in Preference has been detected
+     */
+    public void onCountryPreferenceChanged(String countryPreference) {
+        //TODO Do not get preference from the task again. Send it as a param
+        updateTopTracks();
     }
 }
 

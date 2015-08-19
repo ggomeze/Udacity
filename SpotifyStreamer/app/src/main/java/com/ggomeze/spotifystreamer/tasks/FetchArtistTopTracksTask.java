@@ -16,10 +16,8 @@
 package com.ggomeze.spotifystreamer.tasks;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -66,8 +64,7 @@ public class FetchArtistTopTracksTask extends AsyncTask<Long, Void, List<Track>>
 
         try {
             if (context != null) {
-                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-                artistTopTracksParams.put(context.getString(R.string.spotify_country_param), sharedPref.getString(context.getString(R.string.pref_country_key), "US"));
+                artistTopTracksParams.put(context.getString(R.string.spotify_country_param), Utility.getCountryPreference(context));
                 //Get spotifyId from database before calling Spotify
                 Cursor cursor = context.getContentResolver().query(
                         ArtistContract.ArtistEntry.CONTENT_URI,

@@ -1,7 +1,7 @@
 package com.ggomeze.spotifystreamer.fragments;
 
-import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -19,7 +19,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.ggomeze.spotifystreamer.R;
-import com.ggomeze.spotifystreamer.activities.DetailActivity;
 import com.ggomeze.spotifystreamer.adapters.ArtistCursorAdapter;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
@@ -42,6 +41,18 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
     private ArrayList<ParcelableArtist> mReturnedArtists;
     private ArtistCursorAdapter mArtistCursorAdapter;
     private EditText mSearchText;
+
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface Callback {
+        /**
+         * Callback for when an item has been selected from this fragment.
+         */
+        public void onItemSelected(Uri artistTopTracksUri, String artistName);
+    }
 
     //Mandatory empty constructor for the activity to instantiate
     public ArtistResultsFragment() {
@@ -81,12 +92,9 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
                 // if it cannot seek to that position.
                 Cursor cursor = (Cursor) mArtistCursorAdapter.getItem(position);
                 if (cursor != null) {
-                    Intent artistDetail = new Intent(getActivity(), DetailActivity.class)
-                            .setData(TrackContract.TrackEntry.buildTracksFromAnArtist(cursor.getLong(ArtistContract.ArtistEntry.COL_ARTIST_ID_INDEX))
-                            );//artists/#/tracks
-                    //TODO Remove this info and get it from database
-                    artistDetail.putExtra(getString(R.string.album_intent_extra), cursor.getString(ArtistContract.ArtistEntry.COL_ARTIST_NAME_INDEX));
-                    startActivity(artistDetail);
+                    ((Callback) getActivity()).onItemSelected(
+                            TrackContract.TrackEntry.buildTracksFromAnArtist(cursor.getLong(ArtistContract.ArtistEntry.COL_ARTIST_ID_INDEX)),
+                            cursor.getString(ArtistContract.ArtistEntry.COL_ARTIST_NAME_INDEX));
                 }
             }
         });
@@ -111,6 +119,13 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
             getLoaderManager().restartLoader(FETCH_ARTISTS_LOADER, null, this);
             new FetchArtistsTask(getActivity()).execute(text);
         }
+    }
+
+    /**
+     * Called from MainActivity when a change in Preference has been detected
+     */
+    public void onCountryPreferenceChanged() {
+        searchArtists();
     }
 
     //Callbacks to implement for loaders
