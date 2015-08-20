@@ -36,11 +36,15 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
     private static final String LOG_TAG = ArtistResultsFragment.class.getSimpleName();
 
     private static final String RESTURNED_ARTISTS = "returnedArtists";
+    private static final String SELECTED_ITEM = "current_selected_item";
     private static final int FETCH_ARTISTS_LOADER = 0;
 
     private ArrayList<ParcelableArtist> mReturnedArtists;
     private ArtistCursorAdapter mArtistCursorAdapter;
+    private ListView mArtistList;
     private EditText mSearchText;
+
+    private int mSelectedItem = ListView.INVALID_POSITION;
 
     /**
      * A callback interface that all activities containing this fragment must
@@ -69,7 +73,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
                              Bundle savedInstanceState) {
         View fragment = inflater.inflate(R.layout.fragment_main, container, false);
 
-        ListView mArtistList = (ListView) fragment.findViewById(R.id.list_view_artists);
+        mArtistList = (ListView) fragment.findViewById(R.id.list_view_artists);
         mSearchText = (EditText) fragment.findViewById(R.id.search);
         mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -88,6 +92,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
         mArtistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mSelectedItem = position;
                 // CursorAdapter returns a cursor at the correct position for getItem(), or null
                 // if it cannot seek to that position.
                 Cursor cursor = (Cursor) mArtistCursorAdapter.getItem(position);
@@ -101,6 +106,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
 
         if (savedInstanceState != null && savedInstanceState.containsKey(RESTURNED_ARTISTS)) {
             mReturnedArtists.addAll(savedInstanceState.<ParcelableArtist>getParcelableArrayList(RESTURNED_ARTISTS));
+            mSelectedItem = savedInstanceState.getInt(SELECTED_ITEM);
         }
 
         return fragment;
@@ -109,7 +115,9 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList("returnedArtists", mReturnedArtists);
+        outState.putParcelableArrayList(RESTURNED_ARTISTS, mReturnedArtists);
+        if(mSelectedItem != ListView.INVALID_POSITION)
+            outState.putInt(SELECTED_ITEM, mSelectedItem);
     }
 
     private void searchArtists() {
@@ -148,6 +156,8 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mArtistCursorAdapter.swapCursor(data);
+        if(mSelectedItem != ListView.INVALID_POSITION)
+            mArtistList.smoothScrollToPosition(mSelectedItem);
     }
 
     @Override

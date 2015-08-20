@@ -27,6 +27,7 @@ public class ParcelableArtist extends Artist implements Parcelable {
         id = artist.id;
     }
 
+    //We get the smaller image. It's not being displayed on the detail
     public String getThumbnailUrl() {
         if (mThumbnailUrl.isEmpty()) {
             Integer lowerResolution = 0;

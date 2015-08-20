@@ -38,14 +38,15 @@ public class ParcelableTrack extends Track implements Parcelable {
         id = track.id;
     }
 
+    //For the case of track we get the best resolution image, as it will be displayed bigger on the player
     public String getThumbnailUrl() {
         if (mThumbnailUrl.isEmpty()) {
             List<Image> images = album.images;
-            Integer lowerResolution = 0;
+            Integer higherResolution = 0;
             for (Image image : images) {
                 Integer height = image.height;
-                if (lowerResolution == 0 || height < lowerResolution) {
-                    lowerResolution = height;
+                if (higherResolution == 0 || height > higherResolution) {
+                    higherResolution = height;
                     mThumbnailUrl = image.url;
                 }
             }
