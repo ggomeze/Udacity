@@ -9,11 +9,12 @@ import android.view.MenuItem;
 
 import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.fragments.ArtistResultsFragment;
+import com.ggomeze.spotifystreamer.fragments.PlayerFragment;
 import com.ggomeze.spotifystreamer.fragments.TopTracksFragment;
 import com.ggomeze.spotifystreamer.utils.Utility;
 
 
-public class MainActivity extends ActionBarActivity implements ArtistResultsFragment.Callback {
+public class MainActivity extends ActionBarActivity implements ArtistResultsFragment.ArtistCallback, TopTracksFragment.TrackCallback {
 
     private String mCountryPreference;
     private boolean mTwoPane;
@@ -84,7 +85,7 @@ public class MainActivity extends ActionBarActivity implements ArtistResultsFrag
     }
 
     @Override
-    public void onItemSelected(Uri artistTopTracksUri, String artistName) {
+    public void onArtistSelected(Uri artistTopTracksUri, String artistName) {
         if (mTwoPane) {
 
             Bundle args = new Bundle();
@@ -103,5 +104,16 @@ public class MainActivity extends ActionBarActivity implements ArtistResultsFrag
             artistDetail.putExtra(getString(R.string.album_intent_extra), artistName);
             startActivity(artistDetail);
         }
+    }
+
+    @Override
+    public void onTrackSelected(Uri trackUri) {
+        Bundle args = new Bundle();
+        args.putParcelable(PlayerFragment.TOP_TRACKS_URI, trackUri);
+
+        PlayerFragment fragment = new PlayerFragment();
+        fragment.setArguments(args);
+
+        fragment.show(getSupportFragmentManager(), PlayerFragment.PLAYER_FRAGMENT_TAG);
     }
 }

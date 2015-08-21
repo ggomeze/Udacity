@@ -17,6 +17,7 @@
 package com.ggomeze.spotifystreamer.activities;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
@@ -27,7 +28,7 @@ import com.ggomeze.spotifystreamer.R;
 import com.ggomeze.spotifystreamer.fragments.TopTracksFragment;
 import com.ggomeze.spotifystreamer.utils.Utility;
 
-public class DetailActivity extends ActionBarActivity {
+public class DetailActivity extends ActionBarActivity implements TopTracksFragment.TrackCallback{
 
     private String mCountryPreference;
 
@@ -89,5 +90,12 @@ public class DetailActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onTrackSelected(Uri trackUri) {
+        Intent player = new Intent(this, PlayerActivity.class)
+                .setData(trackUri);//artists/#/tracks/#
+        startActivity(player);
     }
 }

@@ -1,5 +1,6 @@
 package com.ggomeze.spotifystreamer.fragments;
 
+import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -8,7 +9,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.Fragment;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -35,7 +37,10 @@ import java.util.Arrays;
 /**
  * Created by ggomeze on 12/08/15.
  */
-public class PlayerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+public class PlayerFragment extends DialogFragment implements LoaderManager.LoaderCallbacks<Cursor>{
+
+    public static String PLAYER_FRAGMENT_TAG = "player_fragment_track";
+    public static final String TOP_TRACKS_URI = "top_tracks_uri";
 
     private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
 
@@ -90,16 +95,22 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            mTrackUri = getArguments().getParcelable(TOP_TRACKS_URI);
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        Intent intent = getActivity().getIntent();
-        if (intent == null) return null;
+        if (mTrackUri == null) {
+            Intent intent = getActivity().getIntent();
+            if (intent == null || intent.getData() == null) return null;
 
-        mTrackUri = intent.getData();
+            mTrackUri = intent.getData();
+        }
+
         View fragment = inflater.inflate(R.layout.fragment_player, container, false);
 
         //Setup the view objects
@@ -151,6 +162,18 @@ public class PlayerFragment extends Fragment implements LoaderManager.LoaderCall
         });
 
         return fragment;
+    }
+
+    /** The system calls this only when creating the layout in a dialog. */
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        // The only reason you might override this method when using onCreateView() is
+        // to modify any dialog characteristics. For example, the dialog includes a
+        // title by default, but your custom layout might not need it. So here you can
+        // remove the dialog title, but you must call the superclass to get the Dialog.
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        return dialog;
     }
 
     @Override

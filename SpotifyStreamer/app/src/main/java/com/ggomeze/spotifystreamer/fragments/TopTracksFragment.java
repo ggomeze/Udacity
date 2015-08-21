@@ -16,7 +16,6 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.ggomeze.spotifystreamer.R;
-import com.ggomeze.spotifystreamer.activities.PlayerActivity;
 import com.ggomeze.spotifystreamer.adapters.TrackCursorAdapter;
 import com.ggomeze.spotifystreamer.data.ArtistContract;
 import com.ggomeze.spotifystreamer.data.TrackContract;
@@ -43,6 +42,18 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
     private TrackCursorAdapter mTrackCursorAdapter;
     private Uri mArtistTopTracksUri;
     private long mArtistId = -1;
+
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface TrackCallback {
+        /**
+         * ArtistCallback for when an item has been selected from this fragment.
+         */
+        public void onTrackSelected(Uri artistTopTracksUri);
+    }
 
     //Mandatory empty constructor for the activity to instantiate
     public TopTracksFragment() {
@@ -83,12 +94,10 @@ public class TopTracksFragment extends Fragment implements LoaderManager.LoaderC
                 // if it cannot seek to that position.
                 Cursor cursor = (Cursor) mTrackCursorAdapter.getItem(position);
                 if (cursor != null) {
-                    Intent player = new Intent(getActivity(), PlayerActivity.class)
-                            .setData(TrackContract.TrackEntry.buildTrackFromArtistAndTrack(
-                                            cursor.getLong(TrackContract.TrackEntry.COL_ARTIST_FOREIGN_KEY_INDEX),
-                                                    cursor.getLong(TrackContract.TrackEntry.COL_ID_INDEX)));//artists/#/tracks/#
-                    //TODO send track id from the list to start with
-                    startActivity(player);
+                    ((TrackCallback) getActivity()).onTrackSelected(
+                            TrackContract.TrackEntry.buildTrackFromArtistAndTrack(
+                                    cursor.getLong(TrackContract.TrackEntry.COL_ARTIST_FOREIGN_KEY_INDEX),
+                                    cursor.getLong(TrackContract.TrackEntry.COL_ID_INDEX)));//artists/#/tracks/#
                 }
             }
         });

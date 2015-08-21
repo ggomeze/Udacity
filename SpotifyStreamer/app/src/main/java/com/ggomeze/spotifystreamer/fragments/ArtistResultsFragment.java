@@ -51,11 +51,11 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
      * implement. This mechanism allows activities to be notified of item
      * selections.
      */
-    public interface Callback {
+    public interface ArtistCallback {
         /**
-         * Callback for when an item has been selected from this fragment.
+         * ArtistCallback for when an item has been selected from this fragment.
          */
-        public void onItemSelected(Uri artistTopTracksUri, String artistName);
+        public void onArtistSelected(Uri artistTopTracksUri, String artistName);
     }
 
     //Mandatory empty constructor for the activity to instantiate
@@ -97,7 +97,7 @@ public class ArtistResultsFragment extends Fragment implements LoaderManager.Loa
                 // if it cannot seek to that position.
                 Cursor cursor = (Cursor) mArtistCursorAdapter.getItem(position);
                 if (cursor != null) {
-                    ((Callback) getActivity()).onItemSelected(
+                    ((ArtistCallback) getActivity()).onArtistSelected(
                             TrackContract.TrackEntry.buildTracksFromAnArtist(cursor.getLong(ArtistContract.ArtistEntry.COL_ARTIST_ID_INDEX)),
                             cursor.getString(ArtistContract.ArtistEntry.COL_ARTIST_NAME_INDEX));
                 }
