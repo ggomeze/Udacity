@@ -39,7 +39,7 @@ import java.util.Arrays;
  */
 public class PlayerFragment extends DialogFragment implements LoaderManager.LoaderCallbacks<Cursor>{
 
-    public static String PLAYER_FRAGMENT_TAG = "player_fragment_track";
+    public static final String PLAYER_FRAGMENT_TAG = "player_fragment_track";
     public static final String TOP_TRACKS_URI = "top_tracks_uri";
 
     private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
@@ -49,7 +49,13 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
     private int MILLISECONDS = 100;
 
     private static final String CURRENT_ITEM = "current_item";
+    private static final String CURRENT_POSITION = "current_position";
+    private static final String PLAYER_ON_PAUSED = "player_on_paused";
+    private static final String PLAYER_COMPLETED = "player_completed";
+    private static final String BUTTON_PLAYER_ON_PAUSED = "button_player_on_paused";
+
     private Uri mTrackUri;
+    private boolean mOnTouch;
 
     private TextView mTrackName;
     private TextView mArtistName;
@@ -68,6 +74,7 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
     private MediaPlayer mMediaPlayer;
     private boolean bPlayerOnPaused = false; //On pause state player
     private boolean bButtonPauseDisplayed = false; //Button pause displayed
+    private boolean bPlayerCompleted = false; //Track was completely played
     private int mCurrentPosition;
 
     private Handler mHandler;
@@ -124,6 +131,7 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         mPlayButton = (ImageButton) fragment.findViewById(R.id.play_button);
         mNextButton = (ImageButton) fragment.findViewById(R.id.next_button);
         mSeekBar = (SeekBar) fragment.findViewById(R.id.slider);
+
         updateSeekBarWithPosition(0);
 
         mMediaPlayer = new MediaPlayer();
@@ -134,8 +142,12 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         mSeekBar.setOnSeekBarChangeListener(listener);
         mHandler = new Handler();
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(CURRENT_ITEM)) {
+        if (savedInstanceState != null) {
             mCurrentPlayingItem = savedInstanceState.getInt(CURRENT_ITEM);
+            updatePlayerWithPosition(savedInstanceState.getInt(CURRENT_POSITION));
+            bPlayerOnPaused = savedInstanceState.getBoolean(PLAYER_ON_PAUSED);
+            setPlayerButtonOnPause(savedInstanceState.getBoolean(BUTTON_PLAYER_ON_PAUSED));
+            bPlayerCompleted = savedInstanceState.getBoolean(PLAYER_COMPLETED);
         }
 
         getLoaderManager().initLoader(FETCH_TRACKS_LOADER, null, this);
@@ -191,7 +203,8 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         else
             mCurrentPlayingItem++;
         updateSeekBarWithPosition(0);
-        updateTrackAndPlay();
+        updateTrackOnScreen();
+        preparePlayerForPlaying(true);
     }
 
     private void moveToPrevious(){
@@ -200,7 +213,8 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         else
             mCurrentPlayingItem--;
         updateSeekBarWithPosition(0);
-        updateTrackAndPlay();
+        updateTrackOnScreen();
+        preparePlayerForPlaying(true);
     }
 
     private void clickedOnMiddleButton() {
@@ -218,7 +232,7 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
             mMediaPlayer.reset();
         } else {//idle, initialized, preparing, prepared and button on play
             setPlayerButtonOnPause(true);
-            play();
+            preparePlayerForPlaying(true);
         }
     }
 
@@ -226,14 +240,14 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         bButtonPauseDisplayed = onPause;
         if(onPause) {
             mPlayButton.setImageResource(android.R.drawable.ic_media_pause);
-            startUpdatingSeekBarTask();
         } else {
             mPlayButton.setImageResource(android.R.drawable.ic_media_play);
             stopUpdatingSeekBarTask();
         }
     }
 
-    private void play() {
+    private void preparePlayerForPlaying(boolean forPlaying) {
+        setPlayerButtonOnPause(forPlaying);
         mMediaPlayer.reset();
         try {
             String dataSource = mReturnedTracks[mCurrentPlayingItem].getAsString(TrackContract.TrackEntry.COLUMN_TRACK_URL);
@@ -246,33 +260,42 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         }
     }
 
-    public void startReadyPlayer(){
+    private void startReadyPlayer(){
         mMediaPlayer.seekTo(mCurrentPosition);
+        bPlayerOnPaused = false;
+        bPlayerCompleted = false;
         mMediaPlayer.start();
+        startUpdatingSeekBarTask();
+    }
+
+    public void prepared() {
+        if (bButtonPauseDisplayed) {
+            startReadyPlayer();
+        }
     }
 
     private void updateSeekBarWithPosition(int position) {
         if (0 <= position && position <= 30000) {
+            mSeekBar.setProgress(position);
             mCurrentPosition = position;
-            mSeekBar.setProgress(mCurrentPosition);
         }
     }
 
     private void updateSeekBarWithPlayerPosition() {
-        updateSeekBarWithPosition(mMediaPlayer.getCurrentPosition());
-    }
-
-    public void updatePlayerWithSeekBarPosition(int position) {
-        if (0 <= position && position <= 30000) {
-            mCurrentPosition = position;
-            if(mMediaPlayer.isPlaying())
-                mMediaPlayer.seekTo(mCurrentPosition);
+        int playerPosition = mMediaPlayer.getCurrentPosition();
+        if (!mOnTouch && 0 <= playerPosition && playerPosition <= 30000) {
+            updateSeekBarWithPosition(playerPosition);
         }
     }
 
-    private void updateTrackAndPlay() {
-        setPlayerButtonOnPause(true);
+    public void updatePlayerWithPosition(int position) {
+        if (0 <= position && position <= 30000) {
+            mCurrentPosition = position;
+            mMediaPlayer.seekTo(mCurrentPosition);
+        }
+    }
 
+    private void updateTrackOnScreen() {
         ContentValues values = mReturnedTracks[mCurrentPlayingItem];
         String thumbnailUrl = values.getAsString(TrackContract.TrackEntry.COLUMN_IMAGE_THUMB);
         mTrackName.setText(values.getAsString(TrackContract.TrackEntry.COLUMN_TRACK_NAME));
@@ -284,8 +307,10 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         } else {
             Picasso.with(getActivity()).load(thumbnailUrl).placeholder(R.drawable.artist_placeholder).into(mAlbumAvatar);
         }
+    }
 
-        play();
+    public void isOnTouch(boolean touch) {
+        mOnTouch = touch;
     }
 
     public void updatePlayerTimers (String start, String end) {
@@ -293,10 +318,22 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
         mEndTime.setText(end);
     }
 
+    public void playerCompleted() {
+        if (mCurrentPosition >= 29900) { //End of track
+            bPlayerCompleted = true; //track finished
+            setPlayerButtonOnPause(false);
+            mMediaPlayer.reset();
+        }
+    }
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(CURRENT_ITEM, mCurrentPlayingItem);
+        outState.putInt(CURRENT_POSITION, mCurrentPosition);
+        outState.putBoolean(PLAYER_ON_PAUSED, bPlayerOnPaused);
+        outState.putBoolean(BUTTON_PLAYER_ON_PAUSED, bButtonPauseDisplayed);
+        outState.putBoolean(PLAYER_COMPLETED, bPlayerCompleted);
     }
 
     @Override
@@ -345,10 +382,15 @@ public class PlayerFragment extends DialogFragment implements LoaderManager.Load
                 if (mCurrentPlayingItem == -1 && id==trackId) mCurrentPlayingItem =i;
             }
 
-            updateTrackAndPlay();
+            updateTrackOnScreen();
+
+            if (!bPlayerCompleted) {
+                preparePlayerForPlaying(!bPlayerOnPaused);
+            }
         }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {}
+
 }

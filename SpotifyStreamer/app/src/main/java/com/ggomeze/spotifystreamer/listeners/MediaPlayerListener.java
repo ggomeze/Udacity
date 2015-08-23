@@ -23,7 +23,7 @@ public class MediaPlayerListener implements MediaPlayer.OnPreparedListener,
     public void onPrepared(MediaPlayer mp) {
         PlayerFragment fragment = mFragment.get();
         if(fragment!=null){
-            fragment.startReadyPlayer();//Update with current set position
+            fragment.prepared();
         }
     }
 
@@ -31,9 +31,7 @@ public class MediaPlayerListener implements MediaPlayer.OnPreparedListener,
     public void onCompletion(MediaPlayer mp) {
         PlayerFragment fragment = mFragment.get();
         if(fragment!=null){
-            fragment.setPlayerButtonOnPause(false);
-            mp.reset();
-            fragment.updatePlayerWithSeekBarPosition(0);
+            fragment.playerCompleted();
         }
 
     }
@@ -42,20 +40,24 @@ public class MediaPlayerListener implements MediaPlayer.OnPreparedListener,
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         PlayerFragment fragment = mFragment.get();
         if(fragment!=null){
-            fragment.updatePlayerTimers(Utility.convertMillisToText(progress), Utility.convertMillisToText(30999 - progress));
+            fragment.updatePlayerTimers(Utility.convertMillisToText(100 +   progress), Utility.convertMillisToText(30900 - progress));
         }
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
+        PlayerFragment fragment = mFragment.get();
+        if(fragment!=null){
+            fragment.isOnTouch(true);
+        }
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         PlayerFragment fragment = mFragment.get();
         if(fragment!=null){
-            fragment.updatePlayerWithSeekBarPosition(seekBar.getProgress());
+            fragment.updatePlayerWithPosition(seekBar.getProgress());
+            fragment.isOnTouch(false);
         }
     }
 }
